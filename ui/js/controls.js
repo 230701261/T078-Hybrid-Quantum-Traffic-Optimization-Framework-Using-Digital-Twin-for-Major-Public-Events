@@ -1,139 +1,45 @@
-/**
- * Floating HUD Controls & 3D Camera Manager
- */
-
+/** Operator controls bound to the real Digital Twin APIs and map renderers. */
 class ControlsManager {
-    constructor(app) {
-        this.app = app;
-        this.bindControls();
-    }
+  constructor(app) {
+    this.app = app;
+    this.bindControls();
+  }
 
-    bindControls() {
-        // 1. Play / Pause Button
-        const btnPlayPause = document.getElementById('btnPlayPause');
-        if (btnPlayPause) {
-            btnPlayPause.addEventListener('click', () => {
-                if (this.app.isPaused) {
-                    this.app.sendAction('resume');
-                } else {
-                    this.app.sendAction('pause');
-                }
-            });
-        }
-
-        // 2. Reset Button
-        const btnReset = document.getElementById('btnReset');
-        if (btnReset) {
-            btnReset.addEventListener('click', () => {
-                this.app.sendAction('reset');
-            });
-        }
-
-        // 3. Scenario Selector Buttons
-        const btnNormal = document.getElementById('btnScenarioNormal');
-        const btnEvent = document.getElementById('btnScenarioEvent');
-        if (btnNormal && btnEvent) {
-            btnNormal.addEventListener('click', () => {
-                this.setScenarioUI('normal_day');
-                this.app.sendAction('set_scenario', { scenario: 'normal_day' });
-            });
-            btnEvent.addEventListener('click', () => {
-                this.setScenarioUI('event_day');
-                this.app.sendAction('set_scenario', { scenario: 'event_day' });
-            });
-        }
-
-        // 4. Speed Multipliers
-        document.querySelectorAll('.speed-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const speed = parseFloat(e.target.dataset.speed || '1.0');
-                document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active', 'bg-cyan-600/30', 'text-cyan-300', 'border', 'border-cyan-500/30'));
-                e.target.classList.add('active', 'bg-cyan-600/30', 'text-cyan-300', 'border', 'border-cyan-500/30');
-                this.app.sendAction('set_speed', { multiplier: speed });
-            });
-        });
-
-        // 5. 3D Camera Quick Presets
-        document.querySelectorAll('.cam-preset-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const target = e.target.closest('.cam-preset-btn').dataset.target;
-                document.querySelectorAll('.cam-preset-btn').forEach(b => b.classList.remove('active', 'bg-blue-600/30', 'text-blue-300'));
-                e.target.closest('.cam-preset-btn').classList.add('active', 'bg-blue-600/30', 'text-blue-300');
-                if (this.app.renderer3d) {
-                    this.app.renderer3d.focusCamera(target);
-                }
-            });
-        });
-
-        // 6. Layer Toggles
-        const toggleMap = {
-            layerVehicles: 'vehicles',
-            layerPedestrians: 'pedestrians',
-            layerSignals: 'signals',
-            layerBuildings: 'buildings'
-        };
-        for (const [elemId, layerKey] of Object.entries(toggleMap)) {
-            const el = document.getElementById(elemId);
-            if (el) {
-                el.addEventListener('change', (e) => {
-                    if (this.app.renderer3d) {
-                        this.app.renderer3d.layers[layerKey] = e.target.checked;
-                    }
-                });
-            }
-        }
-    }
-
-    setScenarioUI(scenario, eventPhase = null) {
-        const btnNormal = document.getElementById('btnScenarioNormal');
-        const btnEvent = document.getElementById('btnScenarioEvent');
-        const hudBadge = document.getElementById('hudScenarioBadge');
-        const phaseBadge = document.getElementById('eventPhaseBadge');
-        const phaseText = document.getElementById('eventPhaseText');
-        if (!btnNormal || !btnEvent) return;
-
-        if (scenario === 'event_day') {
-            btnEvent.className = 'scenario-btn active px-4 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all';
-            btnNormal.className = 'scenario-btn px-4 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all text-slate-400 hover:text-white';
-            
-            if (hudBadge) {
-                hudBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-amber-950/80 border border-amber-500/30 text-amber-400';
-                hudBadge.innerText = 'EVENT SURGE';
-            }
-
-            if (phaseBadge && phaseText && eventPhase) {
-                phaseBadge.classList.remove('hidden');
-                phaseText.innerText = eventPhase;
-            }
-        } else {
-            btnNormal.className = 'scenario-btn active px-4 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all';
-            btnEvent.className = 'scenario-btn px-4 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all text-slate-400 hover:text-white';
-            
-            if (hudBadge) {
-                hudBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-emerald-950/80 border border-emerald-500/30 text-emerald-400';
-                hudBadge.innerText = 'NORMAL DAY';
-            }
-
-            if (phaseBadge) {
-                phaseBadge.classList.add('hidden');
-            }
-        }
-    }
-
-    updatePlayPauseUI(isPaused) {
-        const playIcon = document.getElementById('playIcon');
-        const playText = document.getElementById('playText');
-        const btn = document.getElementById('btnPlayPause');
-        if (!playIcon || !playText || !btn) return;
-
-        if (isPaused) {
-            playIcon.innerText = '▶';
-            playText.innerText = 'Start';
-            btn.className = 'p-1.5 px-3 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow transition-all';
-        } else {
-            playIcon.innerText = '⏸';
-            playText.innerText = 'Pause';
-            btn.className = 'p-1.5 px-3 rounded-xl text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white flex items-center gap-1.5 shadow transition-all';
-        }
-    }
+  bindControls() {
+    document.getElementById('btnStart')?.addEventListener('click', () => this.app.startBoth());
+    document.getElementById('btnPlayPause')?.addEventListener('click', () => this.app.togglePause());
+    document.getElementById('btnReset')?.addEventListener('click', () => this.app.restartBoth());
+    document.getElementById('btnScenarioNormal')?.addEventListener('click', () => this.app.selectScenario('normal_day'));
+    document.getElementById('btnScenarioEvent')?.addEventListener('click', () => this.app.selectScenario('event_day'));
+    document.querySelectorAll('.speed-btn').forEach(button => button.addEventListener('click', () => {
+      this.app.setSpeed(Number(button.dataset.speed)).then(success => {
+        if (success) document.querySelectorAll('.speed-btn').forEach(item => item.classList.toggle('active', item === button));
+      });
+    }));
+    document.querySelectorAll('.cam-preset-btn').forEach(button => button.addEventListener('click', () => {
+      const target = button.dataset.target;
+      document.querySelectorAll(`.cam-preset-btn[data-target="${target}"]`).forEach(item => item.classList.toggle('active', item === button));
+      for (const renderer of this.app.renderers) renderer.focusCamera(target);
+    }));
+    document.querySelectorAll('[data-layer]').forEach(input => input.addEventListener('change', () => {
+      this.app.setLayer(input.dataset.layer, input.checked);
+    }));
+    document.querySelectorAll('.dock-tab').forEach(button => button.addEventListener('click', () => {
+      document.querySelectorAll('.dock-tab').forEach(item => item.classList.toggle('active', item === button));
+      document.querySelectorAll('.dock-pane').forEach(pane => pane.classList.toggle('active', pane.id === `dock-${button.dataset.tab}`));
+      requestAnimationFrame(() => this.app.renderers.forEach(renderer => renderer.onResize()));
+    }));
+    document.getElementById('btnClearSelection')?.addEventListener('click', () => this.app.clearSelection());
+    document.getElementById('diversionPercent')?.addEventListener('input', event => {
+      document.getElementById('diversionValue').textContent = `${event.target.value}%`;
+      this.app.highlightSelectedCorridor();
+    });
+    ['routeSource', 'routeAlternative'].forEach(id => document.getElementById(id)?.addEventListener('change', () => this.app.highlightSelectedCorridor()));
+    ['vipEnabled', 'vipCorridor', 'constructionEnabled', 'constructionCorridor'].forEach(id => document.getElementById(id)?.addEventListener('change', () => this.app.highlightSelectedCorridor()));
+    document.getElementById('syncCameras')?.addEventListener('change', event => { this.app.syncCameras = event.target.checked; });
+    document.querySelectorAll('.log-filter').forEach(button => button.addEventListener('click', () => {
+      document.querySelectorAll('.log-filter').forEach(item => item.classList.toggle('active', item === button));
+      this.app.renderEvents(button.dataset.filter);
+    }));
+  }
 }

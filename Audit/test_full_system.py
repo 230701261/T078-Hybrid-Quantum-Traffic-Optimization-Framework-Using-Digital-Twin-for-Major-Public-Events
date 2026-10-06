@@ -21,7 +21,12 @@ def test_rest_endpoints():
     r_comp = requests.get(f"{BASE_URL}/api/comparison")
     assert r_comp.status_code == 200, f"Comparison failed: {r_comp.status_code}"
     comp = r_comp.json()
-    assert "normal_day" in comp and "event_day" in comp
+    # The current endpoint compares the paired Classical and Quantum
+    # simulations for one shared scenario; it no longer compares unrelated
+    # Normal Day and Event Day runs.
+    assert "classical" in comp and "quantum" in comp
+    assert "scenario_id" in comp and "synchronization" in comp
+    assert "measured" in comp and "comparisons" in comp["measured"]
     print("  [PASS] Comparison endpoint verified")
 
     # 3. Controls

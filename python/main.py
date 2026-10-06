@@ -2,7 +2,18 @@ import uvicorn
 import webbrowser
 import threading
 import time
-from .config import HOST, PORT
+import sys
+from pathlib import Path
+
+# Support both `python -m python.main` and the documented
+# `python python\main.py` invocation.
+if __package__ in (None, ""):
+    project_root = Path(__file__).resolve().parent.parent
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+    from python.config import HOST, PORT
+else:
+    from .config import HOST, PORT
 
 def open_browser():
     time.sleep(1.2)

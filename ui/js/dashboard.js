@@ -185,17 +185,14 @@ class DashboardManager {
         const container = document.getElementById('corridorsList');
         if (!container || !edgesCongestion) return;
 
-        const mainRoads = [
-            { id: 'E_WAL_1', name: 'Wallajah Rd (West)' },
-            { id: 'E_WAL_4', name: 'Wallajah Rd (East)' },
-            { id: 'E_BELLS_1', name: 'Bells Rd (Stadium)' },
-            { id: 'E_KAM_1', name: 'Kamarajar Salai (North)' },
-            { id: 'E_PYC_2', name: 'Pycrofts Rd (Central)' }
-        ];
+        const mainRoads = Object.entries(edgesCongestion)
+            .filter(([, data]) => data && Number.isFinite(Number(data.occupancy))
+                && Number.isFinite(Number(data.queue_len)))
+            .sort((a, b) => Number(b[1].queue_len) - Number(a[1].queue_len))
+            .slice(0, 5);
 
         let html = '';
-        for (const road of mainRoads) {
-            const cData = edgesCongestion[road.id] || { occupancy: 0, level: 'green', queue_len: 0 };
+        for (const [edgeId, cData] of mainRoads) {
             const pct = Math.min(100, Math.round(cData.occupancy * 100));
             let badgeClass = 'text-emerald-400 bg-emerald-950/60 border border-emerald-500/30';
             if (cData.level === 'red') badgeClass = 'text-rose-400 bg-rose-950/60 border border-rose-500/30 font-bold';
@@ -203,7 +200,7 @@ class DashboardManager {
 
             html += `
                 <div class="flex items-center justify-between p-1.5 rounded-lg bg-slate-900/60 border border-slate-800/40">
-                    <span class="text-slate-300 truncate max-w-[170px]">${road.name}</span>
+                    <span class="text-slate-300 truncate max-w-[170px]">${edgeId}</span>
                     <div class="flex items-center gap-2">
                         <span class="text-[10px] text-slate-500">${cData.queue_len}m Q</span>
                         <span class="px-1.5 py-0.5 rounded text-[10px] ${badgeClass}">${pct}%</span>
@@ -211,7 +208,7 @@ class DashboardManager {
                 </div>
             `;
         }
-        container.innerHTML = html;
+        container.innerHTML = html || '<div class="muted">Waiting for measured edge telemetry.</div>';
     }
 
     updateSignals(trafficLights) {

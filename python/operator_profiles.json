@@ -1,0 +1,15 @@
+{
+  "weather": {
+    "clear": {"speed_factor": 1.0, "description": "No weather speed adjustment"},
+    "rain": {"speed_factor": 0.9, "description": "Configured reduced lane speed"},
+    "heavy rain": {"speed_factor": 0.75, "description": "Configured reduced lane speed"},
+    "fog": {"speed_factor": 0.8, "description": "Configured reduced lane speed"}
+  },
+  "construction": {"speed_cap_mps": 2.0, "travel_time_factor": 2.0},
+  "vip": {"travel_time_factor": 0.75},
+  "optimization": {
+    "route_priority_multiplier": 0.8,
+    "restriction_speed_factor": 0.6,
+    "signal_extension_max_s": 75.0
+  }
+}

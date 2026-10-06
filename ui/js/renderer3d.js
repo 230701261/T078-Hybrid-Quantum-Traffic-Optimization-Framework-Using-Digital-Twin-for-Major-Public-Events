@@ -4,6 +4,10 @@
  * Open Sandy Beach & Ocean, Roadside Shops, Single Stadium Station, and Time-Dependent Heavy Event Congestion.
  */
 
+// Buffer geometry is immutable after construction, so both synchronized map
+// scenes can share the same CPU-side road ribbon geometry.
+const sharedRibbonGeometry = new Map();
+
 class SimulationRenderer3D {
     constructor(containerId) {
         this.container = document.getElementById(containerId);
@@ -22,6 +26,16 @@ class SimulationRenderer3D {
         this.vehicleMeshes = new Map();
         this.pedestrianMeshes = new Map();
         this.signalMeshes = new Map();
+        this.roadMeshes = new Map();
+        this.baseRoadColor = 0x1e293b;
+        this.theme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+        this.groundMesh = null;
+        this.selectedEdges = new Set();
+        this.actionEdges = new Set();
+        this.vipEdges = new Set();
+        this.constructionEdges = new Set();
+        this.overlayLayers = { congestion: true, routes: true, actions: true };
+        this.onEntitySelected = null;
         this.floodlightTowers = [];
         this.stadiumMeshGroup = null;
         this.waterMesh = null;
@@ -34,7 +48,12 @@ class SimulationRenderer3D {
             pedestrians: true,
             signals: true,
             buildings: true,
-            shops: true
+            shops: true,
+            congestion: true,
+            routes: true,
+            actions: true,
+            vipRoute: true,
+            construction: true
         };
 
         // Follow Camera Target
@@ -52,19 +71,20 @@ class SimulationRenderer3D {
     init() {
         // 1. Scene
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x060913);
-        this.scene.fog = new THREE.FogExp2(0x060913, 0.00075);
+        const sceneColor = this.theme === 'light' ? 0xe8eef2 : 0x060913;
+        this.scene.background = new THREE.Color(sceneColor);
+        this.scene.fog = new THREE.FogExp2(sceneColor, 0.00075);
 
         // 2. Camera
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        const width = Math.max(1, this.container.clientWidth || window.innerWidth);
+        const height = Math.max(1, this.container.clientHeight || window.innerHeight);
         this.camera = new THREE.PerspectiveCamera(45, width / height, 1, 4500);
         this.camera.position.set(450, 360, -80);
 
         // 3. WebGL Renderer
         this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         this.renderer.setSize(width, height);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -118,16 +138,18 @@ class SimulationRenderer3D {
     }
 
     onResize() {
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        if (!this.container || !this.renderer) return;
+        const width = Math.max(1, this.container.clientWidth);
+        const height = Math.max(1, this.container.clientHeight);
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(width, height);
     }
 
     onMouseMove(event) {
-        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        const rect = this.renderer.domElement.getBoundingClientRect();
+        this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     }
 
     onClick(event) {
@@ -140,7 +162,7 @@ class SimulationRenderer3D {
             while (obj && !obj.userData.entityId && obj.parent !== this.scene) {
                 obj = obj.parent;
             }
-            if (obj && obj.userData && obj.userData.entityId) {
+            if (obj && obj.userData && (obj.userData.entityId || obj.userData.edgeId || obj.userData.junctionId)) {
                 found = obj.userData;
                 break;
             }
@@ -151,6 +173,7 @@ class SimulationRenderer3D {
 
         if (found) {
             this.selectedEntity = found;
+            if (this.onEntitySelected) this.onEntitySelected(found);
             if (found.type === 'Vehicle') {
                 this.followTarget = this.vehicleMeshes.get(found.entityId);
                 this.followType = 'vehicle';
@@ -196,17 +219,31 @@ class SimulationRenderer3D {
         this.build3DEnvironment();
     }
 
+    setTheme(theme) {
+        this.theme = theme === 'light' ? 'light' : 'dark';
+        const background = this.theme === 'light' ? 0xe8eef2 : 0x060913;
+        this.baseRoadColor = this.theme === 'light' ? 0x596a78 : 0x1e293b;
+        if (this.scene) {
+            this.scene.background?.setHex(background);
+            if (this.scene.fog) this.scene.fog.color.setHex(background);
+        }
+        if (this.groundMesh) this.groundMesh.material.color.setHex(this.theme === 'light' ? 0xd7e0e6 : 0x090d1a);
+        for (const meshes of this.roadMeshes.values()) {
+            for (const mesh of meshes) mesh.material.color.setHex(this.baseRoadColor);
+        }
+    }
+
     build3DEnvironment() {
         if (!this.geometry) return;
 
         // 1. Base Ground Terrain
         const groundGeo = new THREE.PlaneGeometry(3800, 3800);
-        const groundMat = new THREE.MeshStandardMaterial({ color: 0x090d1a, roughness: 0.95, metalness: 0.05 });
-        const ground = new THREE.Mesh(groundGeo, groundMat);
-        ground.rotation.x = -Math.PI / 2;
-        ground.position.set(450, -0.2, -400);
-        ground.receiveShadow = true;
-        this.scene.add(ground);
+        const groundMat = new THREE.MeshStandardMaterial({ color: this.theme === 'light' ? 0xd7e0e6 : 0x090d1a, roughness: 0.95, metalness: 0.05 });
+        this.groundMesh = new THREE.Mesh(groundGeo, groundMat);
+        this.groundMesh.rotation.x = -Math.PI / 2;
+        this.groundMesh.position.set(450, -0.2, -400);
+        this.groundMesh.receiveShadow = true;
+        this.scene.add(this.groundMesh);
 
         // 2. Marina Coastal Road with DUAL Sidewalks and Open Beach (Zero Dedicated Statue Park)
         this.buildMarinaCoastalRoad();
@@ -308,7 +345,7 @@ class SimulationRenderer3D {
     }
 
     build3DRoads() {
-        const roadMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85 });
+        const roadMat = new THREE.MeshStandardMaterial({ color: this.baseRoadColor, roughness: 0.85 });
         const sidewalkMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9 });
         const orangePedMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.75, metalness: 0.1 });
         const railBedMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.6 });
@@ -322,11 +359,17 @@ class SimulationRenderer3D {
 
                 const isSidewalk = lane.allow.includes('pedestrian') && !lane.allow.includes('passenger');
                 const elev = isRail ? 7.8 : isOrangePed ? 0.22 : isSidewalk ? 0.18 : 0.08;
-                const mat = isRail ? railBedMat : isOrangePed ? orangePedMat : isSidewalk ? sidewalkMat : roadMat;
+                const mat = isRail ? railBedMat : isOrangePed ? orangePedMat : isSidewalk ? sidewalkMat
+                    : new THREE.MeshStandardMaterial({ color: this.baseRoadColor, roughness: 0.85 });
 
                 const mesh = this.createRibbonMesh(lane.shape, lane.width, elev, mat);
                 if (mesh) {
                     mesh.receiveShadow = true;
+                    if (!isRail && !isOrangePed && !isSidewalk) {
+                        mesh.userData.edgeId = edge.id;
+                        if (!this.roadMeshes.has(edge.id)) this.roadMeshes.set(edge.id, []);
+                        this.roadMeshes.get(edge.id).push(mesh);
+                    }
                     this.scene.add(mesh);
                 }
             }
@@ -346,6 +389,9 @@ class SimulationRenderer3D {
 
     createRibbonMesh(points, width, elev, material) {
         if (points.length < 2) return null;
+        const cacheKey = `${width}|${elev}|${points.map(point => `${point[0]},${point[1]}`).join(';')}`;
+        let geo = sharedRibbonGeometry.get(cacheKey);
+        if (geo) return new THREE.Mesh(geo, material);
         const halfW = width / 2;
         const positions = [];
         const indices = [];
@@ -374,10 +420,11 @@ class SimulationRenderer3D {
             }
         }
 
-        const geo = new THREE.BufferGeometry();
+        geo = new THREE.BufferGeometry();
         geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
         geo.setIndex(indices);
         geo.computeVertexNormals();
+        sharedRibbonGeometry.set(cacheKey, geo);
         return new THREE.Mesh(geo, material);
     }
 
@@ -688,6 +735,7 @@ class SimulationRenderer3D {
     update(state) {
         if (!state) return;
         this.state = state;
+        this.updateRoadVisualization(state);
         const delta = this.clock.getDelta();
         this.animTime += delta;
 
@@ -727,6 +775,48 @@ class SimulationRenderer3D {
         }
     }
 
+    setOverlaySelection(selectedEdges = [], actionEdges = []) {
+        this.selectedEdges = new Set(selectedEdges);
+        this.actionEdges = new Set(actionEdges);
+        if (this.state) this.updateRoadVisualization(this.state);
+    }
+
+    setOverlays({ selectedEdges = [], actionEdges = [], vipEdges = [], constructionEdges = [] } = {}) {
+        this.selectedEdges = new Set(selectedEdges);
+        this.actionEdges = new Set(actionEdges);
+        this.vipEdges = new Set(vipEdges);
+        this.constructionEdges = new Set(constructionEdges);
+        if (this.state) this.updateRoadVisualization(this.state);
+    }
+
+    setLayer(layer, enabled) {
+        if (!(layer in this.layers)) return;
+        this.layers[layer] = enabled;
+        if (layer === 'vehicles') this.vehicleMeshes.forEach(mesh => { mesh.visible = enabled; });
+        if (layer === 'pedestrians') this.pedestrianMeshes.forEach(mesh => { mesh.visible = enabled; });
+        if (layer === 'signals') this.signalMeshes.forEach(mesh => { mesh.visible = enabled; });
+        if (layer === 'buildings' && this.stadiumMeshGroup) this.stadiumMeshGroup.visible = enabled;
+        if (layer === 'shops') this.roadsideShopMeshes.forEach(mesh => { mesh.visible = enabled; });
+        if (this.state) this.updateRoadVisualization(this.state);
+    }
+
+    updateRoadVisualization(state) {
+        const congestion = state.edges_congestion || {};
+        for (const [edgeId, meshes] of this.roadMeshes.entries()) {
+            const reading = congestion[edgeId];
+            let color = this.baseRoadColor;
+            if (this.layers.congestion && reading) {
+                const ratio = Number(reading.speed_ratio);
+                color = ratio > 0.75 ? 0x16a34a : ratio > 0.5 ? 0xeab308 : ratio > 0.25 ? 0xf97316 : 0xdc2626;
+            }
+            if (this.layers.routes && this.selectedEdges.has(edgeId)) color = 0x22d3ee;
+            if (this.layers.vipRoute && this.vipEdges.has(edgeId)) color = 0xfacc15;
+            if (this.layers.construction && this.constructionEdges.has(edgeId)) color = 0xf97316;
+            if (this.layers.actions && this.actionEdges.has(edgeId)) color = 0xa78bfa;
+            for (const mesh of meshes) mesh.material.color.setHex(color);
+        }
+    }
+
     updateVehicles(vehicles) {
         const activeIds = new Set();
 
@@ -739,6 +829,7 @@ class SimulationRenderer3D {
                 this.vehicleMeshes.set(v.id, mesh);
                 this.scene.add(mesh);
             }
+            mesh.visible = this.layers.vehicles;
 
             const elev = v.type === 'train' ? 8.1 : 0.25;
             const targetPos = this.sumoTo3D(v.x, v.y, elev);
@@ -850,6 +941,7 @@ class SimulationRenderer3D {
                 this.pedestrianMeshes.set(p.id, mesh);
                 this.scene.add(mesh);
             }
+            mesh.visible = this.layers.pedestrians;
 
             const targetPos = this.sumoTo3D(p.x, p.y, 0.25);
             mesh.position.lerp(targetPos, 0.4);

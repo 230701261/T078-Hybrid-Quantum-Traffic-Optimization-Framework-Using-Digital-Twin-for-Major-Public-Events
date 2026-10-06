@@ -32,6 +32,8 @@ class TrafficLightManager:
             try:
                 state_str = traci.trafficlight.getRedYellowGreenState(tl_id)
                 phase_idx = traci.trafficlight.getPhase(tl_id)
+                phase_duration = traci.trafficlight.getPhaseDuration(tl_id)
+                remaining = traci.trafficlight.getNextSwitch(tl_id) - traci.simulation.getTime()
                 
                 # Determine predominant color for simple rendering
                 predominant = "green"
@@ -46,7 +48,9 @@ class TrafficLightManager:
                     "id": tl_id,
                     "phase": phase_idx,
                     "state": state_str,
-                    "color": predominant
+                    "color": predominant,
+                    "phase_duration_s": round(float(phase_duration), 1),
+                    "seconds_to_switch": round(max(0.0, float(remaining)), 1)
                 }
             except Exception:
                 continue

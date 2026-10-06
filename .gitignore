@@ -1,0 +1,15 @@
+# Local credentials and environment overrides
+.env
+.env.*
+!.env.example
+
+# Python runtime artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Frontend dependencies
+node_modules/
+
+# Local Supabase CLI project metadata
+supabase/.temp/

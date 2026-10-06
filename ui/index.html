@@ -1,232 +1,166 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Traffic Digital Twin - Chepauk Stadium & Marina Beach (SUMO + TraCI)</title>
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-    
-    <!-- 3D Three.js & Controls (Local offline with CDN fallback) -->
-    <script src="js/libs/three.min.js"></script>
-    <script src="js/libs/OrbitControls.js"></script>
-
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Chepauk Traffic Digital Twin | Operations Center</title>
+  <script>
+    (() => {
+      try {
+        const saved = localStorage.getItem('chepauk-theme');
+        document.documentElement.dataset.theme = saved === 'light' || saved === 'dark' ? saved
+          : (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      } catch { document.documentElement.dataset.theme = 'dark'; }
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=theme-1">
+  <script src="js/libs/three.min.js"></script>
+  <script src="js/libs/OrbitControls.js"></script>
 </head>
-<body class="bg-[#050811] text-slate-100 font-sans antialiased overflow-hidden select-none m-0 p-0">
-    
-    <!-- ==================== 100% FULL-SCREEN 3D SIMULATION VIEWPORT ==================== -->
-    <div id="threeContainer" class="absolute inset-0 w-full h-full z-0 block cursor-grab active:cursor-grabbing"></div>
-
-    <!-- ==================== FLOATING TOP CONTROL BAR ==================== -->
-    <header class="floating-top-bar absolute top-4 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
-        
-        <!-- Left: Brand & Location Indicator -->
-        <div class="glass-island pointer-events-auto flex items-center gap-3 px-4 py-2 rounded-2xl border border-cyan-500/20 bg-slate-900/80 backdrop-blur-xl shadow-2xl">
-            <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-                </svg>
-            </div>
-            <div>
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-extrabold tracking-wider text-white uppercase">Chepauk 3D Digital Twin</span>
-                    <span class="text-[10px] px-1.5 py-0.2 rounded bg-cyan-950/80 border border-cyan-400/30 text-cyan-300 font-mono">SUMO • TraCI</span>
-                </div>
-                <div class="text-[10px] text-slate-400 font-medium">MA Chidambaram Stadium • MRTS Station • Marina Beach</div>
-            </div>
-        </div>
-
-        <!-- Center: Dynamic Scenario Selector & Event Phase Status -->
-        <div class="glass-island pointer-events-auto flex items-center gap-2 bg-slate-950/85 p-1 rounded-2xl border border-slate-800/80 shadow-2xl backdrop-blur-xl">
-            <button id="btnScenarioNormal" class="scenario-btn active px-4 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all" data-scenario="normal_day">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
-                <span>Normal Day</span>
-            </button>
-            <button id="btnScenarioEvent" class="scenario-btn px-4 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all text-slate-400 hover:text-white" data-scenario="event_day">
-                <span class="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]"></span>
-                <span>Event Day (Match Surge)</span>
-            </button>
-            <div id="eventPhaseBadge" class="hidden px-3 py-1 rounded-xl text-[11px] font-mono font-bold bg-amber-950/80 border border-amber-500/40 text-amber-300 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-                <span id="eventPhaseText">ARRIVAL SURGE</span>
-            </div>
-        </div>
-
-        <!-- Right: Simulation Playback, Speed Multiplier & Status -->
-        <div class="glass-island pointer-events-auto flex items-center gap-2.5 px-3 py-1.5 rounded-2xl border border-slate-800/80 bg-slate-900/80 backdrop-blur-xl shadow-2xl">
-            <!-- Play / Pause -->
-            <button id="btnPlayPause" class="p-1.5 px-3 rounded-xl text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white flex items-center gap-1.5 shadow transition-all">
-                <span id="playIcon">⏸</span>
-                <span id="playText">Pause</span>
-            </button>
-            <button id="btnReset" class="p-1.5 px-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-all" title="Reset Simulation">
-                ⟳ Reset
-            </button>
-
-            <!-- Speed Multiplier -->
-            <div class="flex items-center bg-slate-950/90 p-0.5 rounded-xl border border-slate-800 text-[11px] font-mono">
-                <button class="speed-btn px-2 py-0.5 rounded-lg text-slate-400 hover:text-white" data-speed="1.0">1x</button>
-                <button class="speed-btn px-2 py-0.5 rounded-lg text-slate-400 hover:text-white" data-speed="2.0">2x</button>
-                <button class="speed-btn active px-2 py-0.5 rounded-lg bg-cyan-600/30 text-cyan-300 border border-cyan-500/30" data-speed="5.0">5x</button>
-                <button class="speed-btn px-2 py-0.5 rounded-lg text-slate-400 hover:text-white" data-speed="10.0">10x</button>
-            </div>
-
-            <!-- Simulation Time -->
-            <div class="bg-slate-950/90 px-2.5 py-1 rounded-xl border border-slate-800 font-mono text-xs flex items-center gap-1.5">
-                <span class="text-slate-500">SIM:</span>
-                <span id="simTimeDisplay" class="text-cyan-400 font-bold">00:00.0</span>
-            </div>
-
-            <!-- Live Status -->
-            <div id="wsStatusPill" class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-950/60 border border-emerald-500/30 text-emerald-400">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>LIVE</span>
-            </div>
-        </div>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-block">
+        <span class="brand-mark">CT</span>
+        <div><div class="eyebrow">SMART TRAFFIC OPERATIONS</div><h1>Chepauk Traffic Digital Twin</h1>
+          <div class="subtitle">MA Chidambaram Stadium <i>•</i> MRTS Station <i>•</i> Marina Beach</div></div>
+      </div>
+      <div class="system-status" aria-label="System connections">
+        <span class="status-item"><b id="sumoStatusDot" class="status-dot"></b> SUMO <strong id="sumoStatus">CONNECTING</strong></span>
+        <span class="status-item"><b id="quantumStatusDot" class="status-dot"></b> QUANTUM <strong id="quantumStatus">CHECKING</strong></span>
+        <span class="status-item"><b id="digitalTwinStatusDot" class="status-dot"></b> DIGITAL TWIN <strong id="digitalTwinStatus">CHECKING</strong></span>
+        <span class="status-item"><b id="supabaseStatusDot" class="status-dot"></b> SUPABASE <strong id="supabaseStatus">CHECKING</strong></span>
+      </div>
+      <div class="header-live"><span id="scenarioHeader">CHECKING</span><time id="simTimeDisplay">--:--.-</time><span id="wsStatusPill" class="live-pill checking"><b></b> CONNECTING</span><button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch color theme">Light</button></div>
     </header>
 
-    <!-- ==================== FLOATING BOTTOM-LEFT CAMERA & LAYER CONTROLS ==================== -->
-    <div class="absolute bottom-5 left-5 z-20 flex flex-col gap-2.5 pointer-events-none">
-        
-        <!-- 3D Camera Quick Presets -->
-        <div class="glass-island pointer-events-auto bg-slate-900/85 border border-slate-800/90 rounded-2xl p-1.5 backdrop-blur-xl shadow-2xl flex flex-wrap gap-1 max-w-lg">
-            <button class="cam-preset-btn active px-2.5 py-1 rounded-xl text-xs text-slate-200 hover:text-white hover:bg-slate-800 transition-all font-medium flex items-center gap-1.5" data-target="overview">
-                <span>🗺️</span> Overview
-            </button>
-            <button class="cam-preset-btn px-2.5 py-1 rounded-xl text-xs text-slate-200 hover:text-white hover:bg-slate-800 transition-all font-medium flex items-center gap-1.5" data-target="stadium">
-                <span>🏟️</span> Stadium
-            </button>
-            <button class="cam-preset-btn px-2.5 py-1 rounded-xl text-xs text-slate-200 hover:text-white hover:bg-slate-800 transition-all font-medium flex items-center gap-1.5" data-target="station">
-                <span>🚆</span> Station
-            </button>
-            <button class="cam-preset-btn px-2.5 py-1 rounded-xl text-xs text-slate-200 hover:text-white hover:bg-slate-800 transition-all font-medium flex items-center gap-1.5" data-target="junction">
-                <span>🚦</span> Junction
-            </button>
-            <button class="cam-preset-btn px-2.5 py-1 rounded-xl text-xs text-slate-200 hover:text-white hover:bg-slate-800 transition-all font-medium flex items-center gap-1.5" data-target="bus_stop">
-                <span>🚌</span> Bus Stop
-            </button>
-            <button class="cam-preset-btn px-2.5 py-1 rounded-xl text-xs text-slate-200 hover:text-white hover:bg-slate-800 transition-all font-medium flex items-center gap-1.5" data-target="beach">
-                <span>🌊</span> Beach
-            </button>
-            <button class="cam-preset-btn px-2.5 py-1 rounded-xl text-xs text-slate-200 hover:text-white hover:bg-slate-800 transition-all font-medium flex items-center gap-1.5" data-target="follow_car">
-                <span>🚗</span> Follow Car
-            </button>
-            <button class="cam-preset-btn px-2.5 py-1 rounded-xl text-xs text-slate-200 hover:text-white hover:bg-slate-800 transition-all font-medium flex items-center gap-1.5" data-target="follow_ped">
-                <span>🚶</span> Follow Ped
-            </button>
-            <button class="cam-preset-btn px-2.5 py-1 rounded-xl text-xs text-slate-200 hover:text-white hover:bg-slate-800 transition-all font-medium flex items-center gap-1.5" data-target="follow_train">
-                <span>🚆</span> Follow Train
-            </button>
+    <main class="workspace">
+      <aside class="panel left-panel">
+        <div class="panel-heading"><div><span class="eyebrow">SCENARIO INPUT</span><h2>Configure traffic</h2></div><span class="step-tag">01 / INPUT</span></div>
+        <section class="form-section">
+          <label class="field-label">Scenario</label>
+          <div class="scenario-switch">
+            <button id="btnScenarioNormal" class="scenario-choice selected" data-scenario="normal_day">Normal day</button>
+            <button id="btnScenarioEvent" class="scenario-choice" data-scenario="event_day">Event day</button>
+          </div>
+          <div class="muted compact" id="eventPhaseText">Scenario follows the selected SUMO demand profile.</div>
+        </section>
+        <section class="form-section">
+          <div class="section-head"><label class="field-label">Demand per simulation hour</label><span class="unit-label">VEH / PERSONS</span></div>
+          <div class="density-grid">
+            <label>Cars (veh/h)<input id="densityCars" type="number" min="0" max="10000" step="1" inputmode="numeric" placeholder="Loading…"></label>
+            <label>Buses (veh/h)<input id="densityBuses" type="number" min="0" max="1000" step="1" inputmode="numeric" placeholder="Loading…"></label>
+            <label>Two-wheelers (veh/h)<input id="densityTwoWheelers" type="number" min="0" max="10000" step="1" inputmode="numeric" placeholder="Loading…"></label>
+            <label>Pedestrians (persons/h)<input id="densityPedestrians" type="number" min="0" max="20000" step="1" inputmode="numeric" placeholder="Loading…"></label>
+            <label>Local trains (veh/h)<input id="densityTrains" type="number" min="0" max="1000" step="1" inputmode="numeric" placeholder="Loading…"></label>
+          </div>
+          <p class="muted compact">Values scale the existing SUMO flow definitions; route geometry stays unchanged.</p>
+        </section>
+        <section class="form-section">
+          <div class="section-head"><label class="field-label">Route operations</label><span class="unit-label">SUMO CORRIDORS</span></div>
+          <label class="stack-field">Source corridor<select id="routeSource"><option value="">Select corridor…</option></select></label>
+          <label class="stack-field">Alternative corridor<select id="routeAlternative"><option value="">No reroute</option></select></label>
+          <label class="stack-field range-field">Diversion share <span id="diversionValue">0%</span><input id="diversionPercent" type="range" min="0" max="100" value="0"></label>
+          <label class="stack-field">Active vehicle reroute<select id="activeVehicle"><option value="">Waiting for live vehicles…</option></select></label>
+          <button id="btnRerouteVehicle" class="secondary-button" disabled>Reroute selected vehicle in both runs</button>
+          <label class="check-row"><input id="blockEntry" type="checkbox"><span>Block new entry (reroute eligible traffic)</span></label>
+          <button id="btnApplyRoute" class="secondary-button">Apply route controls to both</button>
+        </section>
+        <section class="form-section">
+          <div class="section-head"><label class="field-label">Signal timing</label><span class="unit-label">LIVE TLS PROGRAM</span></div>
+          <label class="stack-field">Traffic light<select id="signalTls"><option value="">Waiting for live TraCI…</option></select></label>
+          <label class="stack-field">Discovered phase<select id="signalPhase"><option value="">Select a traffic light first…</option></select></label>
+          <label class="stack-field">Phase duration (s)<input id="signalDuration" type="number" min="1" max="240" step="0.1" placeholder="Read from SUMO"></label>
+          <div class="muted compact" id="signalReadback">Signal program capabilities load from live TraCI.</div>
+          <button id="btnApplySignal" class="secondary-button">Apply phase duration to both</button>
+        </section>
+        <section class="form-section last-form-section">
+          <div class="section-head"><label class="field-label">Operating constraints</label><span class="unit-label">BOTH RUNS</span></div>
+          <label class="stack-field">Weather<select id="weatherSelect"><option value="clear">Clear</option><option value="rain">Rain</option><option value="heavy rain">Heavy rain</option><option value="fog">Fog</option></select></label>
+          <label class="check-row"><input id="vipEnabled" type="checkbox"><span>VIP corridor preference</span></label>
+          <label class="stack-field"><span class="visually-hidden">VIP corridor</span><select id="vipCorridor"><option value="">Select VIP corridor…</option></select></label>
+          <p class="muted compact">Cost preference only. Vehicle assignment is unavailable until a real VIP entity exists in SUMO demand.</p>
+          <label class="check-row"><input id="constructionEnabled" type="checkbox"><span>Construction restriction</span></label>
+          <label class="stack-field"><span class="visually-hidden">Construction corridor</span><select id="constructionCorridor"><option value="">Select construction corridor…</option></select></label>
+          <p class="muted compact">Configured speed/cost profile. Live edge closure is conditional and rejected if active routes or loaded future flows use the edge.</p>
+        </section>
+        <button id="btnApplyBoth" class="primary-button"><span>Apply scenario to both simulations</span><b>→</b></button>
+        <div class="sync-caption"><b>1 INPUT</b><span>→</span><b>2 SYNCHRONIZED SUMO RUNS</b></div>
+      </aside>
+
+      <section class="map-panel classical-panel">
+        <div class="map-heading"><div><span class="eyebrow">CLASSICAL TRAFFIC SIMULATION</span><h2>Baseline</h2></div><span class="map-badge baseline-badge">NO OPTIMIZATION</span></div>
+        <div class="map-meta"><span id="classicalConnection">WAITING FOR SUMO</span><span id="classicalSimId">—</span></div>
+        <div id="classicalMap" class="map-viewport" aria-label="Classical simulation map"></div>
+        <div class="map-legend"><span><i class="legend-dot low"></i>Low</span><span><i class="legend-dot moderate"></i>Moderate</span><span><i class="legend-dot high"></i>High</span><span><i class="legend-dot severe"></i>Severe</span></div>
+        <div class="map-toolbar"><button class="cam-preset-btn active" data-target="overview">Overview</button><button class="cam-preset-btn" data-target="stadium">Stadium</button><button class="cam-preset-btn" data-target="station">MRTS</button><label><input id="syncCameras" type="checkbox" checked> Sync cameras</label></div>
+      </section>
+
+      <section class="map-panel quantum-panel">
+        <div class="map-heading"><div><span class="eyebrow">QUANTUM OPTIMIZED TRAFFIC SIMULATION</span><h2>Optimized</h2></div><span id="quantumMapBadge" class="map-badge quantum-badge">WAITING FOR OPTIMIZATION</span></div>
+        <div class="map-meta"><span id="quantumConnection">WAITING FOR SUMO</span><span id="quantumSimId">—</span></div>
+        <div id="quantumMap" class="map-viewport" aria-label="Quantum optimized simulation map"></div>
+        <div class="map-legend"><span><i class="legend-dot low"></i>Low</span><span><i class="legend-dot moderate"></i>Moderate</span><span><i class="legend-dot high"></i>High</span><span><i class="legend-dot severe"></i>Severe</span><span><i class="legend-dot action"></i>Action</span></div>
+        <div class="map-toolbar"><button class="cam-preset-btn active" data-target="overview">Overview</button><button class="cam-preset-btn" data-target="stadium">Stadium</button><button class="cam-preset-btn" data-target="station">MRTS</button><span class="pair-note" id="pairIdLabel">PAIR —</span></div>
+      </section>
+
+      <aside class="panel right-panel">
+        <div class="panel-heading"><div><span class="eyebrow">LIVE METRICS & INSPECTOR</span><h2>Network status</h2></div><span class="live-pip"><b></b> <span id="telemetryStatus">CONNECTING</span></span></div>
+        <div class="metric-strip"><div><span>Active vehicles</span><strong id="metricVehicles">—</strong></div><div><span>Active pedestrians</span><strong id="metricPedestrians">—</strong></div></div>
+        <div class="mode-breakdown demand-readback"><div><span>Generated</span><b id="metricGenerated">—</b></div><div><span>Completed</span><b id="metricCompleted">—</b></div></div>
+        <div class="mode-breakdown"><div><span>Cars</span><b id="metricCars">—</b></div><div><span>Buses</span><b id="metricBuses">—</b></div><div><span>Two wheelers</span><b id="metricTwoWheelers">—</b></div><div><span>Local trains</span><b id="metricTrains">—</b></div><div><span>Signals</span><b id="metricSignals">—</b></div></div>
+        <div class="metric-list"><div><span>Average speed</span><b id="metricSpeed">—</b></div><div><span>Queue length</span><b id="metricQueue">—</b></div><div><span>Congested roads</span><b id="metricCongested">—</b></div><div><span>Stadium visitors</span><b id="metricVisitors">—</b></div></div>
+        <div class="subpanel-head"><span>CLASSICAL VS OPTIMIZED</span><span id="comparisonPair">UNKNOWN</span></div>
+        <div class="comparison-table"><div class="comparison-row table-head"><span>Measured metric</span><span>Base</span><span>Optimized</span><span>Impr.</span></div>
+          <div class="comparison-row"><span>Avg speed</span><b id="cmpSpeedC">—</b><b id="cmpSpeedQ">—</b><em id="cmpSpeedD">—</em></div>
+          <div class="comparison-row"><span>Avg completed trip</span><b id="cmpTripTimeC">—</b><b id="cmpTripTimeQ">—</b><em id="cmpTripTimeD">—</em></div>
+          <div class="comparison-row"><span>Queue</span><b id="cmpQueueC">—</b><b id="cmpQueueQ">—</b><em id="cmpQueueD">—</em></div>
+          <div class="comparison-row"><span>Congested roads</span><b id="cmpCongC">—</b><b id="cmpCongQ">—</b><em id="cmpCongD">—</em></div>
+          <div class="comparison-row"><span>Model estimate · travel saved</span><b colspan="3" id="cmpSaved">N/A</b></div>
+          <div class="comparison-row"><span>Model estimate · queue</span><b colspan="3" id="cmpReduction">N/A</b></div>
         </div>
+        <div class="subpanel-head"><span>OBJECT INSPECTOR</span><button id="btnClearSelection" class="text-button">Clear</button></div>
+        <div id="inspectorContent" class="inspector-content"><span class="muted">Select a road segment, junction, or vehicle on either map.</span></div>
+      </aside>
+    </main>
 
-        <!-- 3D Layer Visibility Toggles -->
-        <div class="glass-island pointer-events-auto bg-slate-900/85 border border-slate-800/90 rounded-2xl p-2 backdrop-blur-xl shadow-2xl flex items-center gap-3 text-xs text-slate-300">
-            <label class="flex items-center gap-1.5 hover:text-white cursor-pointer">
-                <input type="checkbox" id="layerVehicles" checked class="accent-cyan-500 rounded">
-                <span>🚗 Vehicles</span>
-            </label>
-            <label class="flex items-center gap-1.5 hover:text-white cursor-pointer">
-                <input type="checkbox" id="layerPedestrians" checked class="accent-amber-500 rounded">
-                <span>🚶 Pedestrians</span>
-            </label>
-            <label class="flex items-center gap-1.5 hover:text-white cursor-pointer">
-                <input type="checkbox" id="layerSignals" checked class="accent-emerald-500 rounded">
-                <span>🚦 Signals</span>
-            </label>
-            <label class="flex items-center gap-1.5 hover:text-white cursor-pointer">
-                <input type="checkbox" id="layerBuildings" checked class="accent-blue-500 rounded">
-                <span>🏢 Stadium & Shops</span>
-            </label>
+    <section id="operationsDock" class="operations-dock">
+      <nav class="dock-tabs" aria-label="Operations panels">
+        <button class="dock-tab active" data-tab="controls">Simulation controls</button>
+        <button class="dock-tab" data-tab="quantum">Quantum optimization</button>
+        <button class="dock-tab" data-tab="explainability">Route explainability</button>
+        <button class="dock-tab" data-tab="events">Events & telemetry</button>
+        <button class="dock-tab" data-tab="timeline">Timeline</button>
+        <span class="dock-source">LIVE INPUT: SUMO / TRACI</span>
+      </nav>
+      <div class="dock-content">
+        <div class="dock-pane active" id="dock-controls">
+          <div class="playback-controls"><button id="btnStart" class="control-button start-control" disabled>CHECKING</button><button id="btnPlayPause" class="control-button" disabled>PAUSE</button><button id="btnReset" class="control-button" disabled>RESTART</button>
+            <div class="speed-select"><span>SIM SPEED</span><button class="speed-btn active" data-speed="1">1×</button><button class="speed-btn" data-speed="2">2×</button><button class="speed-btn" data-speed="3">3×</button><button class="speed-btn" data-speed="4">4×</button></div>
+            <div class="runtime-stats"><span>TIME <b id="dockSimTime">—</b></span><span>STEP <b id="simStep">0.5 s</b></span><span>TRACI <b id="traciStatus">—</b></span></div>
+          </div>
+          <div class="layer-toggles"><span class="unit-label">MAP LAYERS</span>
+            <label><input type="checkbox" data-layer="vehicles" checked>Vehicles</label><label><input type="checkbox" data-layer="pedestrians" checked>Pedestrians</label><label><input type="checkbox" data-layer="signals" checked>Signals</label><label><input type="checkbox" data-layer="routes" checked>Traffic routes</label><label><input type="checkbox" data-layer="congestion" checked>Congestion</label><label><input type="checkbox" data-layer="buildings" checked>Stadium & shops</label><label><input type="checkbox" data-layer="vipRoute" checked>VIP route</label><label><input type="checkbox" data-layer="construction" checked>Construction</label><label><input type="checkbox" data-layer="actions" checked>Optimization actions</label>
+          </div>
         </div>
-    </div>
-
-    <!-- ==================== FLOATING BOTTOM-RIGHT COMPACT TELEMETRY HUD ==================== -->
-    <div class="absolute bottom-5 right-5 z-20 pointer-events-none">
-        <div class="glass-island pointer-events-auto bg-slate-900/90 border border-slate-800/90 rounded-2xl p-3.5 backdrop-blur-xl shadow-2xl w-72 text-slate-200">
-            
-            <!-- Header -->
-            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2 mb-2">
-                <div class="flex items-center gap-1.5 font-bold text-xs text-cyan-300 uppercase tracking-wider">
-                    <span>📡</span> Live TraCI Telemetry
-                </div>
-                <span id="hudScenarioBadge" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-emerald-950/80 border border-emerald-500/30 text-emerald-400">
-                    NORMAL DAY
-                </span>
-            </div>
-
-            <!-- Compact Metrics Grid -->
-            <div class="grid grid-cols-2 gap-2 text-xs font-mono">
-                <!-- Vehicles -->
-                <div class="p-1.5 rounded-xl bg-slate-950/70 border border-slate-800/50">
-                    <div class="text-[10px] text-slate-400">Vehicles</div>
-                    <div class="text-base font-bold text-cyan-400 mt-0.5" id="kpiVehicles">0</div>
-                </div>
-
-                <!-- Pedestrians -->
-                <div class="p-1.5 rounded-xl bg-slate-950/70 border border-slate-800/50">
-                    <div class="text-[10px] text-slate-400">Pedestrians</div>
-                    <div class="text-base font-bold text-amber-300 mt-0.5" id="kpiPedestrians">0</div>
-                </div>
-
-                <!-- Transit Buses -->
-                <div class="p-1.5 rounded-xl bg-slate-950/70 border border-slate-800/50">
-                    <div class="text-[10px] text-slate-400">Buses</div>
-                    <div class="text-sm font-bold text-purple-400 mt-0.5" id="kpiBuses">0</div>
-                </div>
-
-                <!-- MRTS Trains -->
-                <div class="p-1.5 rounded-xl bg-slate-950/70 border border-slate-800/50">
-                    <div class="text-[10px] text-slate-400">MRTS Trains</div>
-                    <div class="text-sm font-bold text-blue-400 mt-0.5" id="kpiTrains">2</div>
-                </div>
-
-                <!-- Average Speed -->
-                <div class="p-1.5 rounded-xl bg-slate-950/70 border border-slate-800/50">
-                    <div class="text-[10px] text-slate-400">Avg Speed</div>
-                    <div class="text-sm font-bold text-emerald-400 mt-0.5" id="kpiSpeed">0.0 km/h</div>
-                </div>
-
-                <!-- Waiting Time / Queue Length -->
-                <div class="p-1.5 rounded-xl bg-slate-950/70 border border-slate-800/50">
-                    <div class="text-[10px] text-slate-400">Queue Length</div>
-                    <div class="text-sm font-bold text-orange-400 mt-0.5" id="kpiQueue">0.0m</div>
-                </div>
-            </div>
-
-            <!-- Stadium & Railway Totals -->
-            <div class="mt-2 pt-2 border-t border-slate-800/80 flex justify-between text-[11px] font-mono">
-                <span class="text-slate-400">🏟️ Stadium Visitors:</span>
-                <span class="font-bold text-yellow-400" id="kpiStadiumVisitors">0</span>
-            </div>
-            <div class="mt-1 flex justify-between text-[11px] font-mono">
-                <span class="text-slate-400">🚆 MRTS Station Arrivals:</span>
-                <span class="font-bold text-sky-400" id="kpiRailArrivals">0</span>
-            </div>
-
-            <!-- Congestion Progress Bar -->
-            <div class="mt-2.5">
-                <div class="flex justify-between text-[10px] text-slate-400 font-mono mb-1">
-                    <span>Network Congestion</span>
-                    <span id="kpiCongestionVal" class="text-emerald-400 font-bold">0%</span>
-                </div>
-                <div class="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-800">
-                    <div id="kpiCongestionBar" class="bg-emerald-400 h-full rounded-full transition-all duration-300" style="width: 5%"></div>
-                </div>
-            </div>
+        <div class="dock-pane quantum-pane" id="dock-quantum">
+          <div class="optimizer-summary"><div><span class="unit-label">OPTIMIZER</span><b id="qOptimizer">Waiting for result</b></div><div><span class="unit-label">DECISION VARIABLES</span><b>18 <small>4 route · 10 signal · 4 restriction</small></b></div><div><span class="unit-label">BITSTRING</span><code id="qBitstring">N/A</code></div><div><span class="unit-label">OBJECTIVE</span><b id="qObjective">N/A</b></div><div><span class="unit-label">RUNTIME</span><b id="qRuntime">N/A</b></div><div><span class="unit-label">STATUS</span><b id="qStatus">IDLE</b></div>
+            <button id="btnTriggerQuantum" class="primary-button optimize-button">Run quantum optimization</button></div>
+          <div class="pipeline"><span data-stage="requested">REQUEST</span><i>→</i><span data-stage="running">BUILD QUBO / QAOA</span><i>→</i><span data-stage="validated">VALIDATE</span><i>→</i><span data-stage="applied">APPLY ACTIONS</span><i>→</i><span data-stage="completed">COMPLETED</span></div>
+          <div class="result-strip"><span>Route diversions <b id="qRouteCount">—</b></span><span>Signal changes <b id="qSignalCount">—</b></span><span>Restrictions <b id="qRestrictionCount">—</b></span><span>Model est. travel saved <b id="qSaved">—</b></span><span>Model est. queue reduction <b id="qReduction">—</b></span><span>SUMO <b id="qApplied">—</b></span><span>Run <code id="qRunId">—</code></span></div>
         </div>
-    </div>
-
-    <!-- ==================== INTERACTIVE 3D ENTITY INSPECTOR MODAL ==================== -->
-    <div id="inspectorTooltip" class="absolute hidden z-30 pointer-events-auto bg-slate-900/95 border border-cyan-500/40 rounded-2xl p-3 shadow-2xl backdrop-blur-xl text-xs w-64 text-slate-200">
-        <div id="tooltipContent"></div>
-    </div>
-
-    <!-- Scripts -->
-    <script src="js/renderer3d.js"></script>
-    <script src="js/controls.js"></script>
-    <script src="js/app.js"></script>
+        <div class="dock-pane" id="dock-explainability"><div id="routeExplainability" class="route-explain-list"><span class="muted">Waiting for paired SUMO telemetry.</span></div></div>
+        <div class="dock-pane" id="dock-events"><div class="log-filters"><button class="log-filter active" data-filter="all">All</button><button class="log-filter" data-filter="optimization">Optimization</button><button class="log-filter" data-filter="traffic">Traffic</button><button class="log-filter" data-filter="system">System</button></div><div id="eventLog" class="event-log"><span class="muted">Waiting for server events.</span></div></div>
+        <div class="dock-pane" id="dock-timeline"><div id="timelineView" class="timeline-view"><span class="muted">Timeline events appear as the simulations run.</span></div></div>
+      </div>
+    </section>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="js/renderer3d.js?v=theme-1"></script>
+  <script src="js/controls.js?v=theme-1"></script>
+  <script src="js/app.js?v=theme-1"></script>
 </body>
 </html>
