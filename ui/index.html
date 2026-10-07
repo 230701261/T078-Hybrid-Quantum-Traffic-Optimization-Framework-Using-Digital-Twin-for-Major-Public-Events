@@ -32,7 +32,6 @@
         <span class="status-item"><b id="sumoStatusDot" class="status-dot"></b> SUMO <strong id="sumoStatus">CONNECTING</strong></span>
         <span class="status-item"><b id="quantumStatusDot" class="status-dot"></b> QUANTUM <strong id="quantumStatus">CHECKING</strong></span>
         <span class="status-item"><b id="digitalTwinStatusDot" class="status-dot"></b> DIGITAL TWIN <strong id="digitalTwinStatus">CHECKING</strong></span>
-        <span class="status-item"><b id="supabaseStatusDot" class="status-dot"></b> SUPABASE <strong id="supabaseStatus">CHECKING</strong></span>
       </div>
       <div class="header-live"><span id="scenarioHeader">CHECKING</span><time id="simTimeDisplay">--:--.-</time><span id="wsStatusPill" class="live-pill checking"><b></b> CONNECTING</span><button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch color theme">Light</button></div>
     </header>
@@ -60,32 +59,45 @@
           <p class="muted compact">Values scale the existing SUMO flow definitions; route geometry stays unchanged.</p>
         </section>
         <section class="form-section">
-          <div class="section-head"><label class="field-label">Route operations</label><span class="unit-label">SUMO CORRIDORS</span></div>
+          <div class="section-head"><label class="field-label">Route operations</label><span class="unit-label">BOTH SIMULATIONS</span></div>
           <label class="stack-field">Source corridor<select id="routeSource"><option value="">Select corridor…</option></select></label>
-          <label class="stack-field">Alternative corridor<select id="routeAlternative"><option value="">No reroute</option></select></label>
-          <label class="stack-field range-field">Diversion share <span id="diversionValue">0%</span><input id="diversionPercent" type="range" min="0" max="100" value="0"></label>
-          <label class="stack-field">Active vehicle reroute<select id="activeVehicle"><option value="">Waiting for live vehicles…</option></select></label>
-          <button id="btnRerouteVehicle" class="secondary-button" disabled>Reroute selected vehicle in both runs</button>
-          <label class="check-row"><input id="blockEntry" type="checkbox"><span>Block new entry (reroute eligible traffic)</span></label>
-          <button id="btnApplyRoute" class="secondary-button">Apply route controls to both</button>
+          <label class="stack-field">Alternative corridor<select id="routeAlternative"><option value="">Select connected corridor…</option></select></label>
+          <label class="stack-field range-field">Diversion share <span id="diversionValue">Loading configured range…</span><input id="diversionPercent" type="range" disabled></label>
+          <div class="muted compact" id="routeShareHint">Share applies only to eligible live vehicles.</div>
+          <label class="check-row"><input id="blockEntry" type="checkbox"><span>Block new entry after safe validation</span></label>
+          <label class="stack-field">Duration (seconds)<select id="routeDuration"></select></label>
+          <div id="routeTimerStatus" class="muted compact">Route control inactive.</div>
+          <div class="inline-actions"><button id="btnApplyRoute" class="secondary-button">Apply route operation</button><button id="btnClearRoute" class="text-button">Clear</button></div>
+          <div class="muted compact" id="routeOperationStatus" role="status">Status: READY</div>
+          <div class="muted compact" id="routeOperationResult" aria-live="polite"></div>
         </section>
         <section class="form-section">
-          <div class="section-head"><label class="field-label">Signal timing</label><span class="unit-label">LIVE TLS PROGRAM</span></div>
-          <label class="stack-field">Traffic light<select id="signalTls"><option value="">Waiting for live TraCI…</option></select></label>
-          <label class="stack-field">Discovered phase<select id="signalPhase"><option value="">Select a traffic light first…</option></select></label>
-          <label class="stack-field">Phase duration (s)<input id="signalDuration" type="number" min="1" max="240" step="0.1" placeholder="Read from SUMO"></label>
-          <div class="muted compact" id="signalReadback">Signal program capabilities load from live TraCI.</div>
-          <button id="btnApplySignal" class="secondary-button">Apply phase duration to both</button>
+          <div class="section-head"><label class="field-label">Signal timing</label><span class="unit-label">BOTH SIMULATIONS</span></div>
+          <label class="stack-field">Junction<select id="signalTls"><option value="">Waiting for live signals…</option></select></label>
+          <label class="stack-field">Signal<select id="signalState"><option value="">Discovering supported states…</option></select></label>
+          <label class="stack-field">Duration (seconds)<input id="signalDuration" type="number" step="any" placeholder="Read from SUMO"></label>
+          <div class="muted compact" id="signalLiveState">Signal: waiting for TraCI.</div>
+          <div class="muted compact" id="signalReadback">Status: READY</div>
+          <button id="btnApplySignal" class="secondary-button">Apply signal</button>
         </section>
         <section class="form-section last-form-section">
           <div class="section-head"><label class="field-label">Operating constraints</label><span class="unit-label">BOTH RUNS</span></div>
-          <label class="stack-field">Weather<select id="weatherSelect"><option value="clear">Clear</option><option value="rain">Rain</option><option value="heavy rain">Heavy rain</option><option value="fog">Fog</option></select></label>
+          <label class="stack-field">Weather<select id="weatherSelect"><option value="">Loading configured profiles…</option></select></label>
+          <div class="inline-actions"><button id="btnApplyWeather" class="secondary-button">Apply weather</button><button id="btnResetWeather" class="text-button">Clear weather</button></div>
+          <div id="weatherStatus" class="muted compact">Waiting for verified weather state.</div>
           <label class="check-row"><input id="vipEnabled" type="checkbox"><span>VIP corridor preference</span></label>
           <label class="stack-field"><span class="visually-hidden">VIP corridor</span><select id="vipCorridor"><option value="">Select VIP corridor…</option></select></label>
+          <label class="stack-field">VIP duration (seconds)<select id="vipDuration"></select></label>
+          <div id="vipTimerStatus" class="muted compact">VIP timer inactive.</div>
           <p class="muted compact">Cost preference only. Vehicle assignment is unavailable until a real VIP entity exists in SUMO demand.</p>
+          <label class="stack-field">Construction mode<select id="constructionMode"><option value="">Discovering supported modes…</option></select></label>
+          <div id="constructionProfileInfo" class="muted compact">Loading configured profile.</div>
           <label class="check-row"><input id="constructionEnabled" type="checkbox"><span>Construction restriction</span></label>
           <label class="stack-field"><span class="visually-hidden">Construction corridor</span><select id="constructionCorridor"><option value="">Select construction corridor…</option></select></label>
-          <p class="muted compact">Configured speed/cost profile. Live edge closure is conditional and rejected if active routes or loaded future flows use the edge.</p>
+          <label class="stack-field">Construction duration (seconds)<select id="constructionDuration"></select></label>
+          <div class="inline-actions"><button id="btnApplyConstruction" class="secondary-button">Apply construction</button><button id="btnClearConstruction" class="text-button">Clear construction</button></div>
+          <div id="constructionTimerStatus" class="muted compact">Construction timer inactive.</div>
+          <p class="muted compact">Speed/cost restriction is a simulated profile. Closure is only available when live safety validation passes.</p>
         </section>
         <button id="btnApplyBoth" class="primary-button"><span>Apply scenario to both simulations</span><b>→</b></button>
         <div class="sync-caption"><b>1 INPUT</b><span>→</span><b>2 SYNCHRONIZED SUMO RUNS</b></div>
@@ -96,7 +108,7 @@
         <div class="map-meta"><span id="classicalConnection">WAITING FOR SUMO</span><span id="classicalSimId">—</span></div>
         <div id="classicalMap" class="map-viewport" aria-label="Classical simulation map"></div>
         <div class="map-legend"><span><i class="legend-dot low"></i>Low</span><span><i class="legend-dot moderate"></i>Moderate</span><span><i class="legend-dot high"></i>High</span><span><i class="legend-dot severe"></i>Severe</span></div>
-        <div class="map-toolbar"><button class="cam-preset-btn active" data-target="overview">Overview</button><button class="cam-preset-btn" data-target="stadium">Stadium</button><button class="cam-preset-btn" data-target="station">MRTS</button><label><input id="syncCameras" type="checkbox" checked> Sync cameras</label></div>
+        <div class="map-toolbar"><button class="cam-preset-btn active" data-target="isometric">3D view</button><button class="cam-preset-btn" data-target="topdown">Top-down</button><button class="cam-preset-btn" data-target="overview">Full study area</button><button class="cam-preset-btn" data-target="stadium">Stadium area</button><button class="cam-preset-btn" data-target="station">Chepauk station</button><button class="cam-preset-btn" data-target="reset">Reset</button><label><input id="syncCameras" type="checkbox" checked> Sync cameras</label></div>
       </section>
 
       <section class="map-panel quantum-panel">
@@ -104,7 +116,7 @@
         <div class="map-meta"><span id="quantumConnection">WAITING FOR SUMO</span><span id="quantumSimId">—</span></div>
         <div id="quantumMap" class="map-viewport" aria-label="Quantum optimized simulation map"></div>
         <div class="map-legend"><span><i class="legend-dot low"></i>Low</span><span><i class="legend-dot moderate"></i>Moderate</span><span><i class="legend-dot high"></i>High</span><span><i class="legend-dot severe"></i>Severe</span><span><i class="legend-dot action"></i>Action</span></div>
-        <div class="map-toolbar"><button class="cam-preset-btn active" data-target="overview">Overview</button><button class="cam-preset-btn" data-target="stadium">Stadium</button><button class="cam-preset-btn" data-target="station">MRTS</button><span class="pair-note" id="pairIdLabel">PAIR —</span></div>
+        <div class="map-toolbar"><button class="cam-preset-btn active" data-target="isometric">3D view</button><button class="cam-preset-btn" data-target="topdown">Top-down</button><button class="cam-preset-btn" data-target="overview">Full study area</button><button class="cam-preset-btn" data-target="stadium">Stadium area</button><button class="cam-preset-btn" data-target="station">Chepauk station</button><button class="cam-preset-btn" data-target="reset">Reset</button><span class="pair-note" id="pairIdLabel">PAIR —</span></div>
       </section>
 
       <aside class="panel right-panel">
@@ -112,7 +124,7 @@
         <div class="metric-strip"><div><span>Active vehicles</span><strong id="metricVehicles">—</strong></div><div><span>Active pedestrians</span><strong id="metricPedestrians">—</strong></div></div>
         <div class="mode-breakdown demand-readback"><div><span>Generated</span><b id="metricGenerated">—</b></div><div><span>Completed</span><b id="metricCompleted">—</b></div></div>
         <div class="mode-breakdown"><div><span>Cars</span><b id="metricCars">—</b></div><div><span>Buses</span><b id="metricBuses">—</b></div><div><span>Two wheelers</span><b id="metricTwoWheelers">—</b></div><div><span>Local trains</span><b id="metricTrains">—</b></div><div><span>Signals</span><b id="metricSignals">—</b></div></div>
-        <div class="metric-list"><div><span>Average speed</span><b id="metricSpeed">—</b></div><div><span>Queue length</span><b id="metricQueue">—</b></div><div><span>Congested roads</span><b id="metricCongested">—</b></div><div><span>Stadium visitors</span><b id="metricVisitors">—</b></div></div>
+        <div class="metric-list"><div><span>Vehicle demand</span><b id="metricDemandState">—</b></div><div><span>Vehicles pending</span><b id="metricPendingVehicles">—</b></div><div><span>Average speed</span><b id="metricSpeed">—</b></div><div><span>Queue length</span><b id="metricQueue">—</b></div><div><span>Congested roads</span><b id="metricCongested">—</b></div><div><span>Stadium visitors</span><b id="metricVisitors">—</b></div></div>
         <div class="subpanel-head"><span>CLASSICAL VS OPTIMIZED</span><span id="comparisonPair">UNKNOWN</span></div>
         <div class="comparison-table"><div class="comparison-row table-head"><span>Measured metric</span><span>Base</span><span>Optimized</span><span>Impr.</span></div>
           <div class="comparison-row"><span>Avg speed</span><b id="cmpSpeedC">—</b><b id="cmpSpeedQ">—</b><em id="cmpSpeedD">—</em></div>
@@ -143,11 +155,11 @@
             <div class="runtime-stats"><span>TIME <b id="dockSimTime">—</b></span><span>STEP <b id="simStep">0.5 s</b></span><span>TRACI <b id="traciStatus">—</b></span></div>
           </div>
           <div class="layer-toggles"><span class="unit-label">MAP LAYERS</span>
-            <label><input type="checkbox" data-layer="vehicles" checked>Vehicles</label><label><input type="checkbox" data-layer="pedestrians" checked>Pedestrians</label><label><input type="checkbox" data-layer="signals" checked>Signals</label><label><input type="checkbox" data-layer="routes" checked>Traffic routes</label><label><input type="checkbox" data-layer="congestion" checked>Congestion</label><label><input type="checkbox" data-layer="buildings" checked>Stadium & shops</label><label><input type="checkbox" data-layer="vipRoute" checked>VIP route</label><label><input type="checkbox" data-layer="construction" checked>Construction</label><label><input type="checkbox" data-layer="actions" checked>Optimization actions</label>
+            <label><input type="checkbox" data-layer="vehicles" checked>Vehicles</label><label><input type="checkbox" data-layer="pedestrians" checked>Pedestrians</label><label><input type="checkbox" data-layer="signals" checked>Signals</label><label><input type="checkbox" data-layer="routes" checked>Traffic routes</label><label><input type="checkbox" data-layer="congestion" checked>Congestion</label><label><input type="checkbox" data-layer="buildings" checked>Buildings & landmarks</label><label><input type="checkbox" data-layer="vipRoute" checked>VIP route</label><label><input type="checkbox" data-layer="construction" checked>Construction</label><label><input type="checkbox" data-layer="actions" checked>Optimization actions</label>
           </div>
         </div>
         <div class="dock-pane quantum-pane" id="dock-quantum">
-          <div class="optimizer-summary"><div><span class="unit-label">OPTIMIZER</span><b id="qOptimizer">Waiting for result</b></div><div><span class="unit-label">DECISION VARIABLES</span><b>18 <small>4 route · 10 signal · 4 restriction</small></b></div><div><span class="unit-label">BITSTRING</span><code id="qBitstring">N/A</code></div><div><span class="unit-label">OBJECTIVE</span><b id="qObjective">N/A</b></div><div><span class="unit-label">RUNTIME</span><b id="qRuntime">N/A</b></div><div><span class="unit-label">STATUS</span><b id="qStatus">IDLE</b></div>
+          <div class="optimizer-summary"><div><span class="unit-label">OPTIMIZER</span><b id="qOptimizer">Waiting for result</b></div><div><span class="unit-label">DECISION VARIABLES</span><b><span id="decisionVariableCount">—</span> <small id="decisionVariableBreakdown">Loaded from Quantum variable definitions</small></b></div><div><span class="unit-label">BITSTRING</span><code id="qBitstring">N/A</code></div><div><span class="unit-label">OBJECTIVE</span><b id="qObjective">N/A</b></div><div><span class="unit-label">RUNTIME</span><b id="qRuntime">N/A</b></div><div><span class="unit-label">STATUS</span><b id="qStatus">IDLE</b></div>
             <button id="btnTriggerQuantum" class="primary-button optimize-button">Run quantum optimization</button></div>
           <div class="pipeline"><span data-stage="requested">REQUEST</span><i>→</i><span data-stage="running">BUILD QUBO / QAOA</span><i>→</i><span data-stage="validated">VALIDATE</span><i>→</i><span data-stage="applied">APPLY ACTIONS</span><i>→</i><span data-stage="completed">COMPLETED</span></div>
           <div class="result-strip"><span>Route diversions <b id="qRouteCount">—</b></span><span>Signal changes <b id="qSignalCount">—</b></span><span>Restrictions <b id="qRestrictionCount">—</b></span><span>Model est. travel saved <b id="qSaved">—</b></span><span>Model est. queue reduction <b id="qReduction">—</b></span><span>SUMO <b id="qApplied">—</b></span><span>Run <code id="qRunId">—</code></span></div>
@@ -159,8 +171,8 @@
     </section>
   </div>
   <div id="toast" class="toast" role="status"></div>
-  <script src="js/renderer3d.js?v=theme-1"></script>
-  <script src="js/controls.js?v=theme-1"></script>
-  <script src="js/app.js?v=theme-1"></script>
+  <script src="js/renderer3d.js?v=city-twin-5"></script>
+  <script src="js/controls.js?v=city-twin-5"></script>
+  <script src="js/app.js?v=city-twin-5"></script>
 </body>
 </html>

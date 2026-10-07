@@ -105,6 +105,10 @@ input[type=range] { width: 100%; accent-color: var(--cyan); height: 14px; }
 input[type=checkbox] { accent-color: var(--cyan); }
 .secondary-button,.primary-button,.control-button,.text-button { cursor: pointer; border: 1px solid #344759; background: #111f2a; color: #c7d8e3; }
 .secondary-button { width: 100%; margin-top: 3px; padding: 7px; font-size: 9px; }
+.inline-actions { display: flex; align-items: center; gap: 8px; }
+.inline-actions .secondary-button { flex: 1; }
+.constraint-card { margin: 10px 0; padding: 9px; border: 1px solid var(--line-soft); border-radius: 8px; background: color-mix(in srgb, var(--panel-raised, #17212b) 55%, transparent); }
+.constraint-card > b { display: block; margin-bottom: 7px; color: var(--muted); font-size: 9px; letter-spacing: .08em; }
 .secondary-button:hover,.control-button:hover { border-color: #398fa0; }
 .primary-button { display: flex; align-items: center; justify-content: space-between; width: 100%; border-color: #357f90; background: #12303b; color: #e2f7fa; padding: 10px; font-size: 10px; font-weight: 600; }
 .primary-button:hover { background: #174050; }

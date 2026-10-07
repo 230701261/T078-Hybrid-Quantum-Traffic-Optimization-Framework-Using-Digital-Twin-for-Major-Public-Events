@@ -21,9 +21,9 @@
     <route id="r_east_sb" edges="E_EAST_IN_N E_EAST_1 E_EAST_OUT_S"/>
     <route id="r_east_nb" edges="E_EAST_IN_S E_EAST_1_rev E_EAST_OUT_N"/>
 
-    <route id="r_arr_from_north" edges="E_NORTH_IN_W E_NORTH_1 E_CENTRAL_1 E_STAD_ACC E_STAD_RING_SW E_STAD_RING_WS E_STAD_ACC_rev E_CENTRAL_2 E_SOUTH_2 E_SOUTH_OUT_E"/>
+    <route id="r_arr_from_north" edges="E_NORTH_IN_W E_NORTH_1 E_CENTRAL_1 E_STAD_ACC E_STAD_RING_SW E_STAD_WEST_ACCESS_rev E_CENTRAL_2 E_SOUTH_2 E_SOUTH_OUT_E"/>
     <route id="r_arr_from_south" edges="E_SOUTH_IN_W E_SOUTH_1 E_CENTRAL_2_rev E_STAD_ACC E_STAD_RING_SE E_STAD_RING_ES E_STAD_ACC_rev E_CENTRAL_1_rev E_NORTH_2 E_NORTH_OUT_E"/>
-    <route id="r_arr_from_east" edges="E_EAST_IN_N E_EAST_1 E_SOUTH_2_rev E_CENTRAL_2_rev E_STAD_ACC E_STAD_RING_SW E_STAD_RING_WS E_STAD_ACC_rev E_CENTRAL_1_rev E_NORTH_2 E_NORTH_OUT_E"/>
+    <route id="r_arr_from_east" edges="E_EAST_IN_N E_EAST_1 E_SOUTH_2_rev E_CENTRAL_2_rev E_STAD_ACC E_STAD_RING_SW E_STAD_WEST_ACCESS_rev E_CENTRAL_1_rev E_NORTH_2 E_NORTH_OUT_E"/>
     <route id="r_arr_from_west" edges="E_WEST_IN_N E_WEST_1 E_SOUTH_1 E_CENTRAL_2_rev E_STAD_ACC E_STAD_RING_SE E_STAD_RING_ES E_STAD_ACC_rev E_CENTRAL_1_rev E_NORTH_1_rev E_NORTH_OUT_W"/>
 
     <route id="r_dep_to_north" edges="E_STAD_ACC_rev E_CENTRAL_1_rev E_NORTH_1_rev E_NORTH_OUT_W"/>

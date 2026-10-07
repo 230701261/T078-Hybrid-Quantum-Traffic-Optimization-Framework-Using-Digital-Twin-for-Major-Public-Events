@@ -25,8 +25,16 @@ class QuantumOptimizationClient:
         self.service_url = service_url or os.environ.get("QUANTUM_SERVICE_URL", "http://127.0.0.1:8001")
         self.timeout = float(os.environ.get("QUANTUM_TIMEOUT_SECONDS", str(timeout)))
         
-        # Locate local quantum module directory for fallback in-process solver
-        self.quantum_module_dir = Path(__file__).resolve().parent.parent.parent.parent / "quantum_module" / "Quantum-main"
+        # Prefer the Quantum module vendored in this repository. Keep the old
+        # sibling-checkout path as a compatibility fallback for existing local
+        # development workspaces.
+        project_root = Path(__file__).resolve().parents[2]
+        bundled_module = project_root / "quantum_module" / "Quantum-main"
+        sibling_module = project_root.parent / "quantum_module" / "Quantum-main"
+        self.quantum_module_dir = next(
+            (candidate for candidate in (bundled_module, sibling_module) if candidate.is_dir()),
+            bundled_module,
+        )
         self._fallback_lock = threading.Lock()
 
     def optimize(self, request: OptimizationRequest) -> OptimizationResponse:

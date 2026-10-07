@@ -1,0 +1,636 @@
+============================================================
+PROJECT COMPLETE WORKING DOCUMENTATION
+TRAFFIC DIGITAL TWIN
+============================================================
+
+Evidence convention
+SOURCE CONFIRMED means the current checked-in/local source explicitly implements the statement.
+INFERRED means the conclusion follows from source relationships but was not observed against a running process.
+NOT ESTABLISHED means the code does not prove the behavior or the runtime could not be inspected here.
+This is reverse-engineered documentation, not a live acceptance result. No tests or simulations were run for this document.
+
+1. PROJECT OVERVIEW
+
+Project name: Chepauk Traffic Digital Twin (source banner: SUMO + TraCI Traffic Simulation Digital Twin Engine).
+Project type: Local web application for traffic simulation visualization, paired simulation comparison, optimization, and operator control.
+Primary objective: Simulate the Chepauk study area with SUMO, expose simulation state and controls through a FastAPI service, visualize the network in a browser, and optionally request traffic optimization from a separate Quantum service or use a Classical fallback.
+Use case: Demonstration and operator experimentation for normal-day/event-day traffic scenarios around the stadium, railway, and coastal study area.
+Simulation: SUMO with two independent SUMO/TraCI contexts named Classical and Quantum.
+Languages: Python, JavaScript, HTML, CSS, XML, JSON, PowerShell.
+Backend: FastAPI, Uvicorn, Pydantic, SUMO TraCI/sumolib.
+Frontend: Static HTML/CSS/JavaScript, Three.js, OrbitControls, Chart.js.
+Optimization: The bundled Quantum module under quantum_module/Quantum-main contains the Python API, QUBO/QAOA and Classical solver. The integration client also has an in-process Classical fallback.
+Scope note: Cloud/database persistence internals are excluded as requested. Their absence from this document does not imply that the source lacks them.
+
+2. SYSTEM PURPOSE
+
+The browser is the operator and visualization client. SUMO computes vehicle movement on a modeled road graph. TraCI lets Python control and observe running SUMO processes. The Digital Twin backend owns simulation lifecycle, reads current simulation state, exposes REST and WebSocket interfaces, validates operational changes, and returns telemetry. The optimization path converts live/requested traffic context into an optimization request, obtains a bitstring and action plan, maps the plan to canonical network IDs, validates it, applies supported actions, and reads back the resulting SUMO state.
+
+The 3D Digital Twin is a visualization of the network geometry and simulation telemetry; it is not the traffic simulator. SUMO remains the source of vehicle motion. Classical optimization provides a deterministic solver and fallback path; the separate service attempts QAOA when configured. A computed plan is not itself proof that its actions were applied: the integration API records application status separately.
+
+3. SYSTEM ARCHITECTURE
+
+Browser (ui/index.html, JS, Three.js)
+    | REST JSON and WebSocket JSON
+    v
+FastAPI Digital Twin (python/server.py, one Uvicorn listener)
+    |                       |                         |
+    v                       v                         v
+SimulationPair        OptimizationJobManager    operator profile/state
+    |                       |                         |
+    +-- Classical TraCI     +-- QuantumOptimizationClient
+    +-- Quantum TraCI             | HTTP to :8001; local Classical fallback
+    |                             v
+    |                       bundled Quantum API and optimizer
+    v
+Two separately launched SUMO processes, each controlled through TraCI.
+
+The “Classical simulation” and “Quantum simulation” are two actual SUMO contexts. The “Classical optimizer” and “Quantum optimizer” are solvers, which are a separate concept. A solve can use either solver; a paired simulation still has the two simulation contexts. The paired operator APIs prevalidate/coordinate context mutations and use snapshots/rollback for supported operations. Quantum API process startup is separate from the Digital Twin process.
+
+4. COMPLETE DATA FLOW
+
+1. The browser loads the static UI served by FastAPI. It calls REST endpoints to initialize network geometry, status, controls, operator capabilities, scenario configuration, and history.
+2. The user action is sent as an HTTP JSON body or query parameter. FastAPI validates basic shape/ranges and invokes the relevant manager/controller.
+3. SimulationPair coordinates the Classical and Quantum TraCIController instances. Each controller owns a SUMO process/session and a worker loop that steps SUMO and builds snapshots.
+4. Normal/Event scenario XML supplies network, demand, vehicle types/flows, stops and polygons. Scenario input code validates vehicle routes against actual network connectivity/classes; density changes generate a route-file variant rather than altering the network topology.
+5. On optimization, server.py builds OptimizationRequest data from current simulation snapshots, current scenario and operator constraints. OptimizationJobManager invokes QuantumOptimizationClient.
+6. The client requests the separate optimization API process. On HTTP failure it tries the bundled in-process Classical solver. The response is parsed as OptimizationResponse; a failed fallback is returned as failed status rather than a successful plan.
+7. QuantumResultValidator checks bitstring shape; QuantumToTrafficMapper maps logical corridor/junction action names to project IDs and SUMO IDs. ConstraintEngine checks commands against live IDs, operation types, closures, and other supplied context.
+8. TraCIAdapter applies supported commands under a shared TraCI lock, records prior state where implemented, reads back effects and rolls back a failed batch where implemented. Operator control endpoints use SimulationPair and its own paired transaction logic.
+9. SUMO advances; TraCI snapshots include time, vehicles, pedestrians, edges, traffic lights, and demand/runtime counts. Python sanitizes values for JSON and broadcasts a stream to connected WebSocket clients.
+10. The browser updates metrics, maps, controls, events, charts and camera targets. Three.js maps SUMO coordinates using a shared transform; it does not create the live vehicles.
+
+Protocols/data: REST uses JSON (FastAPI/Pydantic models or dictionaries); WebSocket is /ws/simulation and sends JSON snapshots; Quantum HTTP uses JSON at /api/quantum/optimize and health at /health (service implementation is bundled, but launched separately). Exact error details vary by endpoint; FastAPI returns HTTP errors, operational events are kept in process memory, and controller snapshots expose status/error fields.
+
+5. FEATURE INVENTORY
+
+Source-visible features: server startup and duplicate-listener protection; startup route preflight; normal/event scenario selection; demand-density configuration; two paired SUMO contexts; start/pause/resume/stop/shutdown/reset/speed; live network, vehicle, pedestrian, signal and congestion state; static 3D study-area features; Classical/Quantum optimization request and Classical fallback; result mapping and validation; paired route operations, route clear/expiry; signal discovery and timing control; weather profile, construction profile/closure, VIP corridor preference; explicit unsupported VIP-entity/scheduled-flow cases; explainability/recommendation data; comparison metrics; operations event list; theme selection; camera/view controls; API health/status and WebSocket stream.
+
+The status matrix later in this document distinguishes source implementation from runtime verification. “Implemented” here means a code path exists; it is not a claim of successful live operation.
+
+6. FEATURE-BY-FEATURE WORKING DETAILS
+
+FEATURE: Startup and dashboard. UI: browser at root, served from ui. Frontend: ui/index.html and app.js. Backend: python/main.py checks port ownership and validates both route scenarios, then runs one Uvicorn server; python/server.py startup starts the simulation pair, event broadcaster and expiry manager. Input: local configuration/XML. Output: health/status and UI. SUMO effect: starts two SUMO contexts at service startup. Readback: /api/health and /api/system/status. Limit: an already running project listener is detected and startup exits/reuses browser access; it does not hot-reload latest source.
+
+FEATURE: Normal Day / Event Day. UI: scenario controls. API: POST /api/control/scenario or /api/simulation/apply; start also accepts scenario. Backend: scenario_inputs.py validates routes; SimulationPair starts/restarts each controller with the selected route/config files. SUMO: normal_day.sumocfg or event_day.sumocfg. Readback: simulation state/scenario. The two route files and network are source of demand/topology; no network rewrite is performed.
+
+FEATURE: Traffic density. UI exposes configured demand classes. API: GET /api/traffic/config and POST /api/traffic/configure. Backend: scenario_inputs.py parses flow rates from route XML, validates density, and writes a temporary route variant. SUMO sees the generated demand file on reset/restart; whether an already running simulation can be changed in place is not established as equivalent to changing the loaded demand.
+
+FEATURE: Vehicles, pedestrians, cars, buses, two-wheelers and trains. Live vehicle/person snapshots come from TraCI; vehicle class/category is derived from simulation objects. Train timetable constants and train-stop infrastructure exist in config/additional data and scenario_manager.py has train/crowd dispatch logic; whether that manager is connected to the active controller loop is NOT ESTABLISHED from source imports. Do not treat a train-stop landmark as proof of moving train entities.
+
+FEATURE: Stadium, station, beach, roads and railway. Static SUMO geometry and additional polygon/stops are exported by network_exporter.py and drawn by renderer3d.js. Network roads and crossing shapes come from network.net.xml; vehicle positions come from snapshots. Landmark polygon geometry is contextual rendering, not an independently simulated stadium/station/coast process.
+
+FEATURE: Traffic signals and congestion. TraCIController extracts signal state/timing and edge occupancy/congestion; UI uses these values for map overlays/indicators. Exact physical signal compliance by SUMO is based on loaded network program definitions. No live operation was performed here.
+
+FEATURE: Start/pause/resume/stop/reset/speed. Controls call /api/control/start, /pause, /resume, /stop, /reset and /speed. SimulationPair forwards to both contexts. Speed is validated by the API (0.2–20) then applied to controllers. State is read from simulation snapshots; no speed multiplier runtime comparison was performed.
+
+FEATURE: Classical and Quantum optimization. UI trigger calls /api/integration/trigger_optimization. Backend builds a request, runs OptimizationJobManager and returns status, result, solver, runtime, plan and application result. Solver endpoint accepts configured QAOA/Classical choices; if Quantum HTTP fails, client calls the local Classical fallback. Applying a result is a separate integration stage, passed through mapper/ConstraintEngine/TraCI adapter. A successful optimizer response alone does not prove every action was applied.
+
+FEATURE: ConstraintEngine. All mapped optimization commands are batch validated before TraCI writes; operator endpoint paths also have validation in their controller/engine call paths. Supports command/action validation and batch validation. Exact coverage differs by operation: source inspection shows route, edge, TLS, speed and operation-specific checks, but does not establish a formal proof of all possible network safety conditions.
+
+FEATURE: Route Operations. UI sends source_corridor_id, alternative_corridor_id, diversion_share, block_new_entry and configured duration to POST /api/operator/route-operation. Dynamic discovery is returned through /api/operator/capabilities and /api/network/routes; connectivity is checked by corridor alternatives. SimulationPair snapshots both contexts, selects eligible vehicles, obtains routes through NetworkRoutingService, applies routes and verifies readback/destination. It rejects if context counts/results conflict or restoration cannot be verified. Scheduled-flow entry blocking is rejected where runtime preconditions cannot safely reassign loaded flows; it is not silently converted into a route edit. Clear calls /api/operator/route-operation/clear and restores stored route snapshots. Shared OperatorExpiryManager triggers server-side restoration and expiry events. Paired operation may reject when the two contexts differ; this is intentional safety behavior.
+
+FEATURE: Signal timing / RED-GREEN. /api/operator/capabilities discovers active signal state/phases for both contexts and returns the common controllable states and timing bounds. /api/operator/signal-timing requests a TLS, optional phase, duration and/or human state. SimulationPair applies to both contexts, validates supported mapping/duration, reads back and rolls back on supported failure. Fixed durations are read-only. Current signal display and remaining time are derived from snapshots. Exact guarantees of duration beyond the active phase and asynchronous timing are constrained by SUMO's phase program.
+
+FEATURE: Weather. Profiles come from python/operator_profiles.json (clear, rain, heavy rain, fog with configured speed factors). POST /api/constraints/weather uses controller profile application and saved prior speed factors; reset endpoint restores baseline; readback is returned. This is a simulated speed adjustment profile, not observed meteorology. Expiry integration exists for timed operator profiles in server.py.
+
+FEATURE: Construction. Config exposes speed/cost profile and closure modes. Profile changes controller constraints/speed effects and has a timer; closure uses SUMO lane permissions through TraCIController.apply_edge_closure only after preflight, snapshots prior permissions and supports restore. Construction clear/expiry restores recorded state and verifies. A cost/speed profile is not a physical closure. Closure is conditional if vehicles or loaded routes depend on the affected edges.
+
+FEATURE: VIP corridor preference. Profile stores a routing-cost factor/duration. The API applies a temporary routing preference and expiry restore. VIP entity assignment explicitly reports unavailable because loaded demand has no VIP vehicle type/entity; no VIP vehicle is fabricated.
+
+FEATURE: Route Explainability. GET /api/operator/route-explainability combines latest plan and live corridor metrics, signal snapshot, variable descriptions and ConstraintEngine checks. Output includes recommendation/action/reason/status/source metadata where derivable. It is based on actual latest plan/live state when present. If no plan/variable definitions are available, output may be unavailable; exact recommendation quality is not established by a running session.
+
+FEATURE: Comparison and live metrics. /api/comparison uses paired snapshots and reports differences, plus synchronization state. MetricsCollector computes rolling chart data/comparison if invoked by the active code path. /api/system/status and /api/simulation/state expose runtime counts and statuses. Some fields are estimates; the comparison response distinguishes model estimates from live metrics where fields are so labeled.
+
+FEATURE: Events and telemetry. record_event stores timestamped process-local events; /api/operations/events returns history. Optimization lifecycle callbacks and operator actions emit events. WebSocket broadcasts snapshots, recent events, timer records and latest optimization/explainability status. Storage is not durable across server restart unless another persistence path is configured.
+
+FEATURE: UI themes and camera. CSS/theme code uses local browser preference and supports dark/light; renderer and dashboard expose camera/view selection, reset, sync, and map layers. Source confirms control paths; persistence and all viewport breakpoints were not browser-tested for this document.
+
+FEATURE: Errors, idempotency and rollback. FastAPI endpoints return structured HTTP errors; route/signal/construction paired operations capture snapshots and attempt restore. Integration schemas validate bitstrings and job manager prevents duplicate application using message/run state. Persistence durability and complete rollback under process crash are not established.
+
+FEATURE-BY-FEATURE STATUS: The preceding entries are intentionally concise; exact API inventory, implementation files, classes and known limitations are expanded below. No feature is declared live PASS by this document.
+
+7. QUANTUM MODULE
+
+The Quantum API and optimizer are now included under quantum_module/Quantum-main. python/integration/quantum_client.py prefers the bundled source for its in-process Classical fallback and retains the previous sibling-checkout path as a compatibility fallback. The API still runs as a separate process, expected at 127.0.0.1:8001. Its live health was NOT ESTABLISHED here.
+
+Integration API request: OptimizationRequest contains message_id, simulation_id, scenario_id, timestamp, schema_version and payload. Payload includes optional event metadata, constraints, live intersection load mapping, solver, density, route modifications and signal timings. Response: run/message/simulation/scenario identifiers, solver label, 18-character binary string, corridor/signal/restriction actions, benefit fields, objective, runtime, status, application result, applied flag and optional error.
+
+The bundled Quantum source contains dynamic variable construction, QUBO/problem builders, a QAOA solver using Qiskit primitives and Aer statevector simulation, and a Classical optimizer. The current source code (not a live process) uses an 18-bit model: four route-diversion bits, ten signal-extension bits, four restriction bits. The QAOA search code uses one ansatz layer and an 8-by-8 parameter grid with 512 shots per point; it uses the most frequent measured string and decoder/repair logic. The Classical solver enumerates candidate binary assignments (2^18 possible combinations) and evaluates the objective under constraints. Those are source details, not measured runtime values.
+
+The integration client sends an HTTP POST to /api/quantum/optimize. It does not expose all HTTP errors to the operator before attempting fallback. Offline fallback invokes the bundled Classical optimizer with isolated temporary artifacts, checks that generated solver/plan/export files share the bitstring, and returns applied_to_sumo=false. It does not itself mutate SUMO. The job manager then validates/maps/applies if configured. Schema bitstring validation accepts only 18 binary characters. Unknown result IDs are rejected by ID mapping. A duplicate message/run path is handled by job manager idempotency checks. Exact behavior for every unknown optimization ID is endpoint-dependent; do not infer broader persistence guarantees.
+
+QAOA is a simulator-based optimization path in this project, not execution on physical quantum hardware. API health and live quantum service availability require a separate running process and are NOT VERIFIED in this documentation.
+
+8. QUANTUM DECISION VARIABLES
+
+Variable positions are generated from the bundled corridor/junction configuration. The current adapter and validator define positional groups as follows; exact display-name-to-canonical-SUMO mapping comes from python/integration/id_mapper.py and bundled JSON data.
+
+| Bit positions | Meaning | Type | Source/consumer | Potential output |
+| 0–3 | Four corridor diversion decisions, ordered from configured corridor list | binary | decision_variables.py; QUBO builder; decoder; mapper | route/corridor priority actions |
+| 4–13 | Ten configured junction signal extension decisions | binary | junction mapping; QUBO/decoder; adapter | TLS phase-duration change |
+| 14–17 | Four corridor restriction decisions | binary | corridor config; QUBO/decoder; adapter | configured speed restriction |
+
+The source groups impose/recommend limits of at most two diversions, five signal extensions, and one restriction. Adapter validation prints warnings for exceeding group counts; it does not itself reject solely on those counts. ConstraintEngine and live target validation provide additional gates. Per-variable output effect depends on decoded plan fields and mappings. The full named order is configuration insertion order, not inferred here as a universal invariant; the exact external config may change it.
+
+9. SUMO MODULE
+
+SUMO is an external executable/library runtime. python/traci_controller.py launches SUMO with the scenario config, connects via TraCI, runs simulation steps on a worker, extracts snapshots and closes the process/connection. Two controllers have distinct labels and sessions. Step length is 0.5 simulation seconds as configured in python/config.py. Each scenario config references the same network and additionals but its own route demand. The network is prebuilt (network.net.xml), with source node/edge/type/connection files retained. Scenario route files define traffic flows/vehicles and route distribution. Startup route preflight parses route definitions against the network, checks edge continuity and vehicle class permission before Uvicorn/SUMO startup.
+
+The simulation loop advances SUMO using TraCI simulationStep, maintains running/pause state and captures vehicle/person/edge/TLS data. Reset/restart closes and starts new simulation processes through controller/pair methods. Exact SUMO binary resolution is environment-dependent through TraCI/SUMO_HOME/PATH; no installed SUMO version was inspected for this documentation.
+
+10. SUMO FILES
+
+| File | Purpose | Referenced by / notes |
+| sumo/network.net.xml | Compiled SUMO network with nodes, edges, lanes, junctions, crossings, traffic lights and connections | Both scenario .sumocfg; sumolib geometry exporter and route validator |
+| sumo/network.nod.xml | Source junction/node definitions | Network build input; not directly consumed at simulation runtime |
+| sumo/network.edg.xml | Source edge definitions | Network build input |
+| sumo/network.typ.xml | Edge type/default attributes | Network build input |
+| sumo/network.con.xml | Explicit network connections | Network build input; topology/connectivity source |
+| sumo/additional.add.xml | Bus stops, train stops and landmark polygons | Both scenario configs and renderer export |
+| sumo/normal_day.sumocfg | Normal-day simulation configuration | Selects network, route, additionals, time/step settings |
+| sumo/event_day.sumocfg | Event-day simulation configuration | Selects network, event route, additionals, time/step settings |
+| sumo/normal_day.rou.xml | Normal-day vehicle/flow demand and route types | Referenced by normal-day config; read for route preflight/density |
+| sumo/event_day.rou.xml | Event-day vehicle/flow demand and route types | Referenced by event-day config; read for route preflight/density |
+
+Vehicle class definitions and flow intervals are embedded in route XML. The exact entity counts depend on the XML and density variant. Train-stop infrastructure exists in additionals; a complete runtime train service is not established merely by this file.
+
+11. TRACI MODULE
+
+TraCIController owns one named SUMO process/connection. traci_session provides serialized session access using a lock; traci_controller.start launches SUMO and initializes connection/network caches. The simulation loop steps the connected process and calls _extract_snapshot. Snapshots include simulation clock, active/pending/completed demand counts as available from TraCI, vehicles with id/type/edge/route/position/speed/angle, pedestrians/persons, traffic lights and edge congestion/queue measures.
+
+Network methods enumerate routes, edges and signals. Routing uses NetworkRoutingService plus SUMO network/routing queries; route mutation calls TraCI vehicle.setRoute after connectivity/class/closure validation, reads route back and checks destination/active state. Edge closure saves prior lane permissions, changes allowed classes, reads back, and supports restore. Signal timing discovers current programs/phases/state/duration/next switch and can set a phase duration subject to configured and program limits. Paired SimulationPair operations snapshot each context, validate both, apply, compare readback and attempt rollback. Connection errors surface into operation failures/status; reconnect behavior beyond restart/recreate methods is NOT ESTABLISHED. No TraCI/SUMO runtime was started for this documentation.
+
+12. DIGITAL TWIN MODULE
+
+python/main.py: command entry, duplicate listener check, route preflight, single Uvicorn run, safe restart guidance.
+python/server.py: FastAPI app, global Classical/Quantum controllers and SimulationPair, startup/shutdown hooks, REST routes, event store, broadcaster and health/status.
+python/simulation_pair.py: lifecycle/synchronization and paired operation orchestration.
+python/traci_controller.py: one SUMO/TraCI context, snapshots and network mutation/readback.
+python/scenario_inputs.py: route/class permission validation, operator config loading, demand/density derivation and generated demand variant.
+python/network_routing_service.py: inspect routes, find alternatives, validate and apply route plans.
+python/integration/: schemas, optimization client, job lifecycle, ID mapping, result adapter and ConstraintEngine.
+python/operator_expiry.py: shared asynchronous timer/expiry records and callbacks.
+python/route_explainability.py: joins latest optimization plan with current live traffic/signal state and constraint checks.
+python/network_exporter.py: exports road/junction/crossing/stop/polygon geometry from SUMO network and additional file.
+Runtime state is largely held in Python process memory: controller snapshots, SimulationPair, current optimization, event list and expiry manager. It resets when the backend process is restarted unless the corresponding state is reconstructed from SUMO/config.
+
+13. CLASSICAL OPTIMIZATION
+
+There are two related Classical paths. The bundled Classical optimizer solves the same QUBO by enumerating binary candidates; it can be requested as a solver or used as the client's offline fallback. That fallback returns a validated OptimizationResponse and plan, with applied_to_sumo=false. The separate existing fallback in the Quantum API is bundled in this repository. Solver complexity and optimization result depend on the model/input; source does not establish performance at operational scale. The runtime measured objective and duration are not documented because no run was performed. A solver response is mapped through QuantumToTrafficMapper and ConstraintEngine before optional TraCI application.
+
+14. CONSTRAINT ENGINE
+
+File: python/integration/constraint_engine.py; class ConstraintEngine. Main entry points: validate_command, validate_batch, validate_commands and edge_is_closed. It checks supported command types, command parameter validity, live edge/TLS/vehicle IDs when context supplies them, canonical/logical target consistency, route/closure and operation conflicts, and batch conflicts. QuantumToTrafficMapper validates logical IDs before constructing DigitalTwinCommand; TraCIAdapter calls validate_batch before first mutation. Operator routes/signals/closures have both API and SimulationPair/controller prechecks; not every operator code path necessarily invokes the same shared method, so “all operator mutations pass through one universal engine” is not established. Invalid batches return structured validation errors and apply zero commands at the adapter boundary. Paired mutation failures trigger snapshot rollback where snapshots exist.
+
+15. ROUTE OPERATIONS
+
+Corridor registry: python/integration/id_mapper.py; live corridor discovery is combined with controller route metadata by /api/network/routes and exposed through /api/operator/capabilities. Alternative corridors are filtered for distinctness/connectivity. POST /api/operator/route-operation validates requested corridor pair/share, configured duration and block flag, captures Classical and Quantum route snapshots, calls SimulationPair.apply_operator_route_operation, reports eligible/rerouted counts and actual share per context, destination preservation and readback status, and activates expiry only after success. RouteRoutingService validates current edge, route, class/permissions/connectivity, destination and affected flow/vehicle state.
+
+Block-new-entry is not an unconditional blanket closure: the operation checks active/future dependencies and may reject when loaded flows/vehicles rely on those edges. Scheduled flow diversion is explicitly advertised unavailable in capabilities. Clear and expiration call restore_operator_route_operation using the saved snapshots; successful state is reported after readback. Failure can yield rollback/rejected/restore error. Expiry uses backend time and emits operation events. No operation was run during documentation.
+
+16. SIGNAL TIMING
+
+Discovery is based on TraCI network_signals() and active programs in both controllers. Capability response intersects safely supported RED/GREEN state options and duration ranges across paired contexts; mappings are derived from actual phase-state strings rather than fixed phase numbers. UI reads these capabilities and current live values. POST /api/operator/signal-timing delegates to SimulationPair.apply_operator_signal_timing; the pair validates both sides, applies supported phase duration, reads current phase/state/duration/next switch and restores the prior snapshot if one side fails. Configuration includes broad operator safety bounds; SUMO phase values are the runtime source. Fixed phases are not independently editable. GREEN/RED availability depends on discovered phase strings and runtime capability.
+
+17. OPERATING CONSTRAINTS
+
+Weather profile values and descriptions are from python/operator_profiles.json. It applies speed factors and can restore baseline/prior values; it is a simulated traffic profile, not actual weather sensing. Construction supports profile mode (speed cap/travel-time factor) and conditional closure mode (lane permission change). Profile and closure are separate timer records with restore state. VIP corridor preference changes route costs and expires; VIP entity assignment is explicitly unavailable because no matching VIP demand entity/type is defined. All states are exposed by capabilities/state API and recorded in events. Behavior is subject to live controller availability, constraints and readback.
+
+18. ROUTE EXPLAINABILITY
+
+Backend: python/route_explainability.py explain_plan, _live_metrics, _signal_state; endpoint GET /api/operator/route-explainability. It reads the latest optimization plan and current snapshot, maps plan variables/actions to configured corridors/junctions, computes live traffic context and displays constraint findings. API capabilities also returns decision-variable definitions. It is not an independent optimizer and should not be represented as an optimization result when no current plan exists. Quantum/classical source label follows the optimizer result. Freshness and recommendation accuracy are not runtime-verified here.
+
+19. REST API
+
+The FastAPI app is in python/server.py. Core documented routes:
+GET /api/health — service identity and health.
+GET /api/system/status — server, paired simulations and optimizer/service status.
+GET /api/simulation/state — current simulation snapshots.
+GET /api/network/geometry — network geometry for map.
+GET /api/network/mappings — ID mappings.
+GET /api/network/routes — route/corridor discovery and alternatives.
+GET /api/network/edges — edge metadata.
+GET /api/network/signals — signal discovery.
+GET /api/simulation/config?scenario=... — selected scenario configuration.
+GET /api/traffic/config?scenario=... — demand configuration.
+GET /api/constraints — active constraints.
+GET /api/operator/capabilities — dynamic corridors, signals and supported operator profiles.
+GET /api/operator/state — active operator/timer state.
+GET /api/operator/route-explainability — latest plan explanations.
+GET /api/comparison — paired KPI comparison.
+GET /api/operations/events — process event history.
+POST /api/control/start, /pause, /resume, /stop, /shutdown, /reset, /speed, /scenario — lifecycle controls.
+POST /api/traffic/configure — demand settings.
+POST /api/constraints/weather and /api/constraints/weather/reset — simulated weather profile apply/restore.
+POST /api/constraints/vip — VIP corridor preference.
+POST /api/constraints/construction — profile mode.
+POST /api/operator/route-operation and /api/operator/route-operation/clear — paired route apply/restore.
+POST /api/operator/signal-timing — paired supported signal timing.
+POST /api/operator/edge-closure — explicit edge permission operation.
+POST /api/operator/construction and /api/operator/construction/clear — construction profile/closure and restoration.
+POST /api/operator/vip/assign — unsupported entity assignment path when no VIP entity exists.
+POST /api/signals/configure — lower-level signal configuration endpoint.
+POST /api/simulation/apply and /api/simulation/routes — scenario and route operations.
+POST /api/integration/trigger_optimization — optimization request/application workflow.
+GET /api/integration/runs, /api/integration/runs/{run_id}, /api/integration/latest_plan — optimization history/result retrieval.
+The hidden-from-OpenAPI legacy route /api/simulation/vehicles/{vehicle_id}/reroute remains defined in source; it is not the current user-facing Route Operations feature.
+
+20. WEBSOCKET
+
+Endpoint: /ws/simulation. server.py accepts WebSocket clients, tracks connections, broadcasts JSON at the backend loop interval (approximately 0.1 s in the broadcaster), and removes failed/disconnected sockets. Payload includes Classical and Quantum simulation snapshots, paired synchronization summary, recent events, operator timer state, latest explainability/plan data where present, and optimization status. Non-finite numerical values are converted to JSON-safe values. This stream is telemetry; REST remains the request/action interface. Network disconnect/reconnect behavior is handled by client reconnect code where present, but live reliability was not tested.
+
+21. FRONTEND
+
+ui/index.html defines dashboard layout, controls, panels and static asset/script loading. ui/css/style.css supplies styles and dark/light appearance. ui/js/app.js defines DigitalTwinApp and owns initialization, REST/WS calls and event handlers. ui/js/dashboard.js renders status, metrics, panels/events and operator state. ui/js/controls.js handles form controls and user actions. ui/js/renderer.js contains the non-3D renderer. ui/js/renderer3d.js contains the Three.js scene, geometry, vehicles, roads, landmarks, signals, controls/camera, layers and view presets. UI code calls dynamic capability APIs rather than serving as the source for operational truth; state is updated from backend responses and telemetry.
+
+Bundled browser libraries: three.min.js, OrbitControls.js and chart.umd.min.js. The frontend is served as static content; package.json does not define a separate frontend start/build workflow that is required for normal use.
+
+22. THREE.JS DIGITAL TWIN
+
+SimulationRenderer3D uses backend-exported geometry from /api/network/geometry. It builds roads/lanes, junctions, pedestrian crossings, stops and SUMO landmark polygons, then renders live entities from simulation telemetry. Vehicle rendering uses SUMO x/y/angle/type/route/speed snapshot values; map position is transformed through worldToSceneCoordinates. Renderer includes camera presets/focus methods for study area, stadium/station and top-down/isometric viewing, camera synchronization support, map visibility controls, signal/traffic visual layers and theme adaptation. Static landmarks do not imply simulated train/bus operation. Buildings and coast/rail features are visualization geometry and may be generated or derived from network/additional data; their accuracy beyond the source geometry is NOT ESTABLISHED here.
+
+23. COORDINATE SYSTEM
+
+SUMO network coordinates are local x/y from the compiled net; the exporter also reads netOffset. In this network, +X is east and +Y is north. Three.js uses +X east, +Y vertical elevation, and -Z north. `worldToSceneCoordinates(sumoX, sumoY, elevation)` returns THREE.Vector3(sumoX, elevation, -sumoY). The exporter shifts additional polygon coordinates by SUMO netOffset to align with the compiled network. Roads, nodes, crossing shapes, 3D elevated lane shapes, stops, landmarks, vehicles, labels and camera focus are intended to use this shared transform. The `shapeCoordinates` helper accounts for Three.js extruded-shape axis orientation. No extra global geographic projection, scale factor, or rotation is applied in this transform; network coordinates provide scene scale. This documents source implementation, not a renewed geographic-accuracy audit.
+
+24. CONFIGURATION
+
+python/config.py: repository-relative paths; host 127.0.0.1 and port 8000; 0.5 s SUMO step; target frame rate; Quantum health timeout; train timetable/dwell/passenger burst constants.
+python/operator_profiles.json: weather profile speed factors; construction speed/cost/duration/modes; VIP routing factor/durations; route diversion min/max/step/default/classes/durations/near-destination boundary; signal timing bounds/operations; optimization effect multipliers.
+python/scenario_inputs.py: loads/validates operator profiles and SUMO XML scenario demand; creates configured route variants.
+sumo/*.sumocfg, *.rou.xml, network.*.xml and additional.add.xml: SUMO simulation, network, demand and landmark inputs.
+quantum_module/Quantum-main/config.py, data/*.json and scenario/*.json: optimizer configuration and mappings.
+.env.example: sample environment settings. Source use confirmed for QUANTUM_SERVICE_URL and QUANTUM_TIMEOUT_SECONDS in quantum_client.py. Server host/port are constants in python/config.py; remaining sample trigger/default variables were not confirmed as consumed in active source and should not be assumed effective.
+ui: no separate operational constants should override API capabilities; theme preference is browser-side.
+
+25. COMPLETE FILE/FOLDER STRUCTURE
+
+The following is the current project tree excluding version-control internals, installed node_modules, Python bytecode/cache, pytest cache, a local test-only Quantum mirror, and one out-of-scope working directory. The bundled Quantum source is canonical for this repository. Audit reports are historical artifacts, not authoritative implementation evidence.
+
+project Traffic/
+|-- .env.example
+|-- .gitignore
+|-- package.json
+|-- package-lock.json
+|-- README.md
+|-- requirements.txt
+|-- restart_digital_twin.ps1
+|-- run_test_runner.py
+|-- quantum_module/Quantum-main/
+|   |-- README.md, config.py, requirements.txt
+|   |-- api/main.py
+|   |-- dashboard/app.py, map_view.py, metrics_panel.py, replay_panel.py, scenario_panel.py
+|   |-- dashboard/components/metric_card.py, route_table.py
+|   |-- dashboard/pages/comparision.py, replay.py
+|   |-- data/corridors.json, intersections.json, junction_mapping.json, roads.json, scenarios.json
+|   |-- experiments/experiment_runner.py, results_visualizer.py, scenario_results.csv, scenario_runner.py, validation_report.py
+|   |-- experiments/figures/constraint_heatmap.png, quantum_vs_classical_difference.png, qubo_objective.png, travel_time_saved.png, weather_impact.png
+|   |-- models/input_schema.py, output_schema.py
+|   |-- network/build_network.py, corridor_extractor.py, graph_loader.py, graph.graphml, junction_mapper.py
+|   |-- optimization/classical_optimizer.py, classical_solver.py, comparison_engine.py, constraint_compiler.py, decision_variables.py, greedy_optimizer.py, interaction_builder.py, objective_builder.py, problem_builder.py, qaoa_solver.py, quadratic_program_builder.py, qubo_builder.py, solution_decoder.py, sumo_exporter.py, traffic_decision_engine.py
+|   |-- pipeline/pipeline_controller.py
+|   `-- scenario/scenario_builder.py, scenario_input.json, scenario_profiles.py
+|-- reference/ contains the five supplied map-reference PNG files (see workspace; omitted filenames here)
+|-- Audit/
+|   |-- CLASSICAL_CONSTRAINT_VALIDATION.md, CONSTRAINT_ENGINE_VALIDATION.md, CONSTRAINT_INTERACTION_VALIDATION.md
+|   |-- CONSTRUCTION_FINAL_VALIDATION.md, CONSTRUCTION_RESTRICTION_VALIDATION.md, CORRIDOR_BLOCK_VALIDATION.md, CORRIDOR_DIVERSION_VALIDATION.md
+|   |-- DATAFLOW_AUDIT.md, DENSITY_CONTROL_TEST.md, DESKTOP_UI_VALIDATION.md, DYNAMIC_CONTROL_HARDCODE_AUDIT.md
+|   |-- FINAL_ACCEPTANCE_REPORT.md, FINAL_DYNAMIC_CONTROL_HARDCODE_AUDIT.md, FINAL_DYNAMIC_CONTROL_REPORT.md, FINAL_FEATURE.txt, FINAL_SYSTEM_HEALTH.md
+|   |-- FIX_IMPLEMENTATION.md, FIX_PLAN.md, HARDCODE_AUDIT.md, ISSUE_REGISTER.md, LOCAL_INTEGRATION_AUDIT.md, LOCAL_INTEGRATION_AUDIT_V2.md
+|   |-- OPERATOR_CONTROL_TEST.md, PARTIAL_FEATURE_COMPLETION_REPORT.md, QUANTUM_CONSTRAINT_VALIDATION.md, QUANTUM_E2E_VALIDATION.md, QUANTUM_MAP_VALIDATION.md
+|   |-- ROUTE_OPERATIONS_FINAL_VALIDATION.md, ROUTE_OPERATIONS_VALIDATION.md, run_test_runner.py, SCHEDULED_FLOW_DIVERSION_CAPABILITY.md
+|   |-- SIGNAL_CONTROL_VALIDATION.md, SIGNAL_TIMING_FINAL_VALIDATION.md, SIGNAL_TIMING_VALIDATION.md, SPEED_CONTROL_TEST.md, SYSTEM_TEST_MATRIX.md
+|   |-- TEST_RUNNER_CLEANUP.md, THEME_VALIDATION.md, TLS_TIMING_CAPABILITY.md, TRAFFIC_CONFIGURATION_VALIDATION.md, UI_QUALITY_AUDIT.md
+|   |-- VIP_ASSIGNMENT_CAPABILITY.md, VIP_ROUTE_FINAL_VALIDATION.md, VIP_ROUTE_VALIDATION.md, WEATHER_CONSTRAINT_VALIDATION.md, test_full_system.py
+|   `-- PROJECT_COMPLETE_WORKING_DOCUMENTATION.txt (this document)
+|-- python/
+|   |-- __init__.py, comparison.py, config.py, input_validation.py, main.py, metrics_collector.py, network_exporter.py
+|   |-- network_routing_service.py, operator_expiry.py, operator_profiles.json, route_explainability.py, scenario_inputs.py, scenario_manager.py
+|   |-- server.py, simulation_pair.py, startup_checks.py, traci_controller.py, traci_session.py, traffic_light_manager.py
+|   `-- integration/__init__.py, constraint_engine.py, id_mapper.py, job_manager.py, quantum_client.py, quantum_sumo_adapter.py, schemas.py
+|-- sumo/
+|   |-- additional.add.xml, event_day.rou.xml, event_day.sumocfg
+|   |-- network.con.xml, network.edg.xml, network.net.xml, network.nod.xml, network.typ.xml
+|   `-- normal_day.rou.xml, normal_day.sumocfg
+|-- tests/
+|   |-- test_constraint_engine.py, test_dynamic_operator_controls.py, test_e2e_sumo_quantum_live.py, test_edge_closure.py
+|   |-- test_issue_resolution.py, test_negative_and_idempotency.py, test_operator_expiry.py, test_operator_operations.py
+|   |-- test_quantum_digital_twin_integration.py, test_quantum_fallback.py, test_real_quantum_api.py, test_route_explainability.py
+|   |-- test_routing_service.py, test_scenario_inputs.py, test_startup_route_preflight.py, test_theme_contract.py, test_tls_timing.py
+|-- ui/
+|   |-- index.html
+|   |-- css/style.css
+|   `-- js/app.js, controls.js, dashboard.js, renderer.js, renderer3d.js
+|       `-- libs/chart.umd.min.js, OrbitControls.js, three.min.js
+
+26. PURPOSE OF EVERY FILE
+
+Root files:
+.env.example — sample environment values; only the Quantum URL and timeout are confirmed read by active application source.
+.gitignore — excludes generated/runtime and local files from version control.
+Audit/DYNAMIC_TRAFFIC_CONTROL_PLAN.md — planning document; not executable behavior.
+Audit/FINAL_REMAINING_FIX_PLAN.md — historical implementation plan; not proof of completion.
+Audit/FINAL_REMAINING_IMPLEMENTATION_PLAN.md — historical plan; not proof of current code behavior.
+package.json / package-lock.json — JavaScript package metadata/lock; no separate dashboard build step required by the current static-serving setup.
+README.md — human setup/project introduction; code is authoritative where they differ.
+requirements.txt — Python runtime/test dependencies.
+restart_digital_twin.ps1 — checks health identity, requests graceful shutdown, waits for port release and starts current source; refuses to kill arbitrary processes.
+run_test_runner.py — project test runner script; not run for this documentation.
+
+Core Python:
+python/__init__.py — package marker.
+python/config.py — paths, server constants, simulation step and train-related settings.
+python/main.py — executable startup, preflight and Uvicorn listener.
+python/server.py — app, REST/WebSocket endpoints, startup/shutdown hooks, operator endpoints, event/status handling.
+python/traci_controller.py — per-context SUMO/TraCI lifecycle, stepping, snapshots, demand/network inspection, signals, closures and routes.
+python/traci_session.py — shared TraCI synchronization lock/session support.
+python/simulation_pair.py — paired lifecycle, sync, transactional operations and cross-context rollback.
+python/scenario_inputs.py — scenario route validation, profile config, density parsing/validation and route variants.
+python/network_routing_service.py — live route inspection, alternative route discovery, route validation/application and affected-flow discovery.
+python/network_exporter.py — SUMO geometry/stop/polygon/crossing export for the UI.
+python/operator_profiles.json — operator capability/effect/duration values.
+python/operator_expiry.py — shared async expiry manager with original state, activation/expiration timestamps and restoration callbacks.
+python/route_explainability.py — explanation/recommendation synthesis from plan and live metrics.
+python/comparison.py — comparison helpers for paired simulation metrics.
+python/metrics_collector.py — rolling metric aggregation/chart/comparison data.
+python/startup_checks.py — listener detection, process ownership and duplicate startup errors.
+python/input_validation.py — request/message validation helpers, including message IDs.
+python/scenario_manager.py — scenario event/train/crowd scheduling logic; active connection to current loop is not established from imports inspected.
+python/traffic_light_manager.py — scenario signal timing helper; active connection to live operator path is not established from imports inspected.
+
+Python integration:
+python/integration/__init__.py — package marker.
+python/integration/schemas.py — Pydantic request/response/command contracts and bitstring validation.
+python/integration/id_mapper.py — logical corridor/junction IDs to canonical/SUMO IDs and corridor discovery mappings.
+python/integration/constraint_engine.py — command/batch validation and closure checks.
+python/integration/quantum_client.py — HTTP optimizer client, timeout and local Classical fallback with temporary artifacts.
+python/integration/quantum_sumo_adapter.py — result validation, logical action mapping, TraCI execution, readback and mutation recovery.
+python/integration/job_manager.py — optimization job lifecycle, result application, deduplication and status callbacks.
+
+SUMO files: see Section 10 for each file’s runtime/build role. XML is the source for network, configuration, stops/polygons, and demand; generated density variants are temporary runtime files.
+
+UI files:
+ui/index.html — document structure, panels, controls and asset loading.
+ui/css/style.css — layout, colors, states and theme rules.
+ui/js/app.js — top-level client initialization, API/WS coordination and user action handlers.
+ui/js/dashboard.js — dashboard status, metrics, events and operator control presentation.
+ui/js/controls.js — form and control component behavior.
+ui/js/renderer.js — 2D/legacy network visualization path.
+ui/js/renderer3d.js — Three.js scene, geometry layers, live entities, labels, camera and views.
+ui/js/libs/three.min.js — bundled Three.js runtime.
+ui/js/libs/OrbitControls.js — bundled camera orbit/pan/zoom controls.
+ui/js/libs/chart.umd.min.js — bundled chart library.
+
+Tests: each file below encodes intended or regression behavior; this list does not say tests passed.
+tests/test_constraint_engine.py — constraint command and batch rules.
+tests/test_dynamic_operator_controls.py — capability-driven UI/operator controls.
+tests/test_e2e_sumo_quantum_live.py — live integration path.
+tests/test_edge_closure.py — closure safety, mutation and restore.
+tests/test_issue_resolution.py — targeted regressions.
+tests/test_negative_and_idempotency.py — invalid requests and duplicate protection.
+tests/test_operator_expiry.py — expiry records/callbacks.
+tests/test_operator_operations.py — operator transactions.
+tests/test_quantum_digital_twin_integration.py — optimizer-to-Digital-Twin path.
+tests/test_quantum_fallback.py — offline Classical fallback.
+tests/test_real_quantum_api.py — external optimizer API integration.
+tests/test_route_explainability.py — plan/live explanation logic.
+tests/test_routing_service.py — route validity/alternative behavior.
+tests/test_scenario_inputs.py — route and demand input validation.
+tests/test_startup_route_preflight.py — startup preflight/port protection.
+tests/test_theme_contract.py — theme/UI contract.
+tests/test_tls_timing.py — signal timing discovery/application.
+
+Audit files: historical project reports/plans/tests; they document earlier checks, not current source truth. Each filename in Section 25 identifies its topic. Audit/run_test_runner.py and Audit/test_full_system.py are audit tooling/tests. This documentation is the only new artifact in this task.
+
+Quantum module files: quantum_module/Quantum-main/api/main.py is the service entry; config.py and requirements.txt describe service configuration/dependencies; data/*.json supply network/corridor/scenario mappings; models/*.py define schemas; network/* contains graph preparation and mapping; optimization/* contains model construction, solvers, decoding and export; scenario/* contains scenario builders/config; pipeline/* provides orchestration; dashboard/* and experiments/* provide optional analysis interfaces and utilities. Generated results, cache and shared runtime artifacts are intentionally excluded from Git.
+
+27. FOLDER RESPONSIBILITIES
+
+python/: application backend and simulation integration.
+python/integration/: optimization contracts, mapping, validation, client, and job lifecycle.
+sumo/: compiled/source network, scenarios, routes and additionals.
+ui/: browser application; ui/js contains application controllers and renderers; ui/js/libs contains bundled libraries.
+tests/: Python unit/integration/regression tests.
+Audit/: historical validation plans/reports and this reverse-engineering document.
+quantum_module/Quantum-main/: bundled Quantum API, optimizer, configuration, and analysis code; generated run artifacts are ignored.
+node_modules/: installed JavaScript packages, generated/dependency state; omitted from source tree expansion.
+.git/: version history metadata; not source content and omitted.
+Python caches and pytest cache: generated; not runtime source.
+
+28. DEPENDENCIES
+
+| Component | Depends on | Purpose |
+| Python API | fastapi>=0.110,<1; uvicorn[standard]>=0.27,<1; pydantic>=2.6,<3 | HTTP/WebSocket app, serving, data contracts |
+| SUMO integration | traci>=1.20,<2; sumolib>=1.20,<2; installed SUMO binaries | Simulation control, topology and geometry |
+| Tests | pytest>=8,<9 | Test execution only |
+| Browser | bundled Three.js, OrbitControls, Chart.js | 3D, camera and charts |
+| Quantum service | Qiskit-related packages and simulator dependencies specified in the bundled Quantum requirements | QUBO/QAOA and Classical solver; exact production environment is external |
+| JavaScript package metadata | package.json/package-lock.json | Current static UI does not require a separate compile stage |
+
+The exact installed versions were not inspected. SUMO executable availability/version and Quantum dependency resolution depend on the host environment.
+
+29. STARTUP / RUN PROCEDURE
+
+Prerequisites: Windows or compatible Python environment; Python packages from requirements.txt; SUMO and its TraCI/sumolib Python modules available to the interpreter; network/scenario XML present; bundled Quantum module for optimization, or app’s in-process Classical fallback for offline optimization.
+
+From project root in PowerShell:
+    python -m venv .venv
+    .\.venv\Scripts\Activate.ps1
+    python -m pip install -r requirements.txt
+    python -m python.main
+
+The project also supports `python python\main.py` per source comment. Startup checks port 8000, validates both scenario route files before starting SUMO, and runs one Digital Twin Uvicorn server. Browser opens at http://127.0.0.1:8000. Keep the terminal open; Ctrl+C triggers Uvicorn shutdown hooks.
+
+Quantum service (separate process): the application expects an API at http://127.0.0.1:8001 by default. From repository root, activate the project environment, run Set-Location quantum_module/Quantum-main, then python -m uvicorn api.main:app --host 127.0.0.1 --port 8001. Check http://127.0.0.1:8001/health. Install quantum_module/Quantum-main/requirements.txt in the shared environment. If the service is unavailable, the client attempts an in-process Classical fallback.
+
+Safe project restart: from project root run `./restart_digital_twin.ps1` in PowerShell. It confirms the listener is this project, requests POST /api/control/shutdown, waits for release and runs current source. It refuses arbitrary port owners and never terminates unrelated processes. Select normal_day/event_day in the UI or via API after startup. Do not run another Digital Twin listener on the same port.
+
+30. PORTS / SERVICES
+
+| Service | Host | Port | Purpose | Started by |
+| Digital Twin FastAPI | 127.0.0.1 | 8000 | REST, WebSocket, static UI, simulation orchestration | python.main / Uvicorn |
+| Quantum optimization API | 127.0.0.1 | 8001 default | Optimization HTTP API and health | Separate Quantum service process; not started by python.main |
+| SUMO TraCI | runtime-assigned/local process endpoints | dynamic | Python-to-SUMO control for each context | TraCIController launches two processes |
+
+Only Digital Twin host/port and Quantum client default are confirmed in current source. Exact internal TraCI ports are process/runtime-managed and not fixed here.
+
+31. ENVIRONMENT VARIABLES
+
+| Name | Purpose | Required/default | Source |
+| QUANTUM_SERVICE_URL | Quantum service base URL | Optional; http://127.0.0.1:8001 | python/integration/quantum_client.py |
+| QUANTUM_TIMEOUT_SECONDS | HTTP request timeout | Optional; constructor default 60 seconds | python/integration/quantum_client.py |
+
+.env.example contains other sample server/trigger variables, but active use was not confirmed in source: python/config.py hardcodes the listener host/port, and job trigger behavior should be verified before relying on those sample entries. No secret values are reproduced.
+
+32. FEATURE DEPENDENCY MATRIX
+
+| Feature | UI | REST | Backend | TraCI | SUMO | Quantum | Configuration |
+| Scenarios/density | yes | yes | yes | restart/load | yes | no | route XML/config |
+| Live traffic/map | yes | geometry/state | yes | yes | yes | no | network/additional |
+| Classical/Quantum solve | yes | yes | job/client | read live context; optionally apply | yes for live context/actions | optional (fallback) | solver/mapping |
+| Route Operations | yes | yes | pair/routing | yes | yes | no | corridor/profile |
+| Signal timing | yes | yes | paired controller | yes | yes | no | limits + active TLS |
+| Weather profile | yes | yes | constraint handler | yes | yes | no | operator_profiles |
+| Construction profile | yes | yes | constraint handler | yes | yes | no | operator_profiles |
+| Physical closure | yes | yes | preflight/rollback | yes | yes | no | edge/network |
+| VIP corridor preference | yes | yes | constraint handler | route preference | yes | no | operator_profiles |
+| VIP entity assignment | visible capability | yes | reports unavailable | no mutation | no entity | no | demand would be required |
+| Explainability | yes | yes | plan/live join | live snapshots | yes | latest plan optional | ID/variable map |
+| Comparison | yes | yes | pair/KPI | snapshots | yes | no | scenario |
+
+33. MODULE INTERACTION MAP
+
+python.main -> startup_checks -> scenario_inputs.validate_scenario_routes -> python.server.app -> Uvicorn
+python.server.startup_event -> SimulationPair.start -> Classical TraCIController.start -> SUMO
+                                      `-> Quantum TraCIController.start -> SUMO
+python.server REST control -> SimulationPair -> controller -> TraCI -> SUMO -> readback -> JSON
+python.server simulation broadcaster -> SimulationPair/controller snapshots -> /ws/simulation -> app/dashboard/renderers
+python.server optimization endpoint -> OptimizationJobManager -> QuantumOptimizationClient -> Quantum API
+                                                        `-> local Classical fallback if HTTP unavailable
+OptimizationResponse -> QuantumResultValidator -> QuantumToTrafficMapper -> ConstraintEngine -> TraCIAdapter -> TraCI -> SUMO -> readback/rollback
+Operator route endpoint -> corridor discovery + snapshots -> SimulationPair/NetworkRoutingService -> both TraCI contexts -> verification -> expiry manager/events
+Operator signal endpoint -> discovered active phases -> SimulationPair -> both TraCI contexts -> readback/rollback
+Network exporter -> sumolib + network/additional XML -> geometry JSON -> renderer3d.js
+
+34. IMPORTANT CLASSES
+
+| Class | File | Responsibility / state |
+| TraCIController | python/traci_controller.py | One SUMO process/session, snapshot, current scenario/speed/pause/status, closure/route/signal snapshots |
+| SimulationPair | python/simulation_pair.py | Coordinates two controllers, lifecycle, synchronization and paired transactions |
+| NetworkRoutingService | python/network_routing_service.py | Vehicle route inspection, path/permission validation, alternative route and readback |
+| ConstraintEngine | python/integration/constraint_engine.py | Command and batch safety validation |
+| OptimizationJobManager | python/integration/job_manager.py | Job lifecycle, solver call, mapping/application, idempotency and status |
+| QuantumOptimizationClient | python/integration/quantum_client.py | HTTP client plus in-process Classical fallback |
+| QuantumResultValidator | python/integration/quantum_sumo_adapter.py | Response bitstring/structure checks |
+| QuantumToTrafficMapper | python/integration/quantum_sumo_adapter.py | Logical plan to canonical SUMO commands |
+| TraCIAdapter | python/integration/quantum_sumo_adapter.py | Constraint check, TraCI mutation, readback and restore |
+| OperatorExpiryManager | python/operator_expiry.py | Timed operator state and expiration callback |
+| MetricsCollector | python/metrics_collector.py | Rolling metric history/chart/comparison values |
+| ScenarioManager | python/scenario_manager.py | Event/timetable/crowd dispatch helper; active wiring not established |
+| TrafficLightManager | python/traffic_light_manager.py | Signal scenario helper; active wiring not established |
+| DashboardManager | ui/js/dashboard.js | Browser dashboard status/metrics and panels |
+| ControlsManager | ui/js/controls.js | Browser operator and simulation controls |
+| DigitalTwinApp | ui/js/app.js | Browser lifecycle, API/WS and interaction coordination |
+| SimulationRenderer3D | ui/js/renderer3d.js | Three.js network/entity/camera renderer |
+
+35. IMPORTANT FUNCTIONS
+
+python.main.main — verifies port and route inputs, imports app and runs Uvicorn.
+server.startup_event/shutdown_event — starts/stops pair, broadcaster and expiry task.
+server.broadcast_simulation_stream — serializes and sends live snapshots.
+server.operator_capabilities — composes live corridor/signal capabilities and profiles.
+server.operator_route_operation / clear_operator_route_operation — paired route transaction and restore.
+server.operator_signal_timing — paired supported signal timing request.
+server.configure_weather / reset_weather / configure_construction_mode / clear_operator_construction — profile/closure apply and restore.
+server.trigger_optimization — constructs request, submits job and returns operation status.
+TraCIController.start/_simulation_loop/_extract_snapshot — SUMO launch, stepping and telemetry.
+TraCIController.apply_route_control/restore_route_operation — route operation and snapshot restore.
+TraCIController.apply_edge_closure/restore_edges — lane permission changes and restore.
+TraCIController.network_signals/set_signal_phase_duration — TLS discovery and timing mutation.
+SimulationPair.start/pause/resume/restart/apply_operator_route_operation/apply_operator_signal_timing — paired simulation lifecycle/operations.
+NetworkRoutingService.validate_route/get_alternative_route/apply_route_plan — safe route calculation and readback.
+ConstraintEngine.validate_command/validate_batch — mutation gate.
+QuantumToTrafficMapper.map_response_to_commands — optimizer action mapping.
+TraCIAdapter.apply_commands — constrained mutations and readback.
+OperatorExpiryManager.activate/cancel/finish/_run — timer lifecycle.
+route_explainability.explain_plan — plan/live-state explanation.
+network_exporter.get_network_geometry — geometry API payload construction.
+SimulationRenderer3D.worldToSceneCoordinates — shared SUMO-to-Three coordinate conversion.
+
+36. STATE MANAGEMENT
+
+Simulation state: per-controller in-memory state and current TraCI process; snapshots refreshed by simulation loop.
+Classical/Quantum context state: distinct TraCIController objects inside SimulationPair.
+Operator state: server memory, operator profile values, controller applied constraints and saved state snapshots.
+Route state: per-controller route-operation snapshots plus OperatorExpiryManager original/public record.
+Signal state: live from TraCI; prior phase/duration snapshots kept during transaction.
+Weather/construction/VIP: active profile/closure data and timer/snapshot records held server-side and/or controller-side.
+Optimization state: job manager and server current/latest plan/status; event data in process memory.
+WebSocket state: set of connected socket objects in server process.
+Restarting the process loses in-memory history/operation records; source does not establish durable reconstruction of every active temporary control.
+
+37. ERROR HANDLING
+
+Startup route errors are caught before server bind and reported as ROUTE_INVALID. Port conflicts are detected; unrelated process is not killed. FastAPI validates query constraints and uses HTTPException for invalid/unsupported operations. Route and signal paired operations report rejected/rolled-back/partial outcomes. TraCI failures cause operation error and rollback attempts; rollback failure is represented as partial/restoration error where the caller detects it. Quantum client catches HTTP failure and invokes Classical fallback; fallback failure returns failed response. Adapter validation failure prevents batch writes. JSON-safe conversion handles non-finite values. Frontend exception and disconnect behavior is source-dependent; browser console/runtime was not inspected for this documentation.
+
+38. SAFETY / VALIDATION
+
+Confirmed mechanisms: pre-start route continuity/class permission checks; Pydantic response/bitstring validation; operator input range and dynamic target checks; route connectivity and vehicle class checks; ConstraintEngine batch gate before optimizer TraCI writes; live edge/TLS ID checks; closure preflight against current vehicles and loaded demand; saved-state snapshots for supported reversible operations; paired context validation and rollback; readback before APPLIED; expiry restoration callback; startup duplicate-port refusal; graceful shutdown script that verifies project identity. Limitations: process crashes can interrupt in-memory rollback/timers; universal ConstraintEngine coverage across every low-level endpoint is not established; readback is only as complete as each operation’s verification logic.
+
+39. CURRENT LIMITATIONS
+
+IMPLEMENTATION LIMITATIONS:
+- The Quantum optimizer uses Qiskit/Aer and its own dependency set. Its API process is separate from the Digital Twin listener.
+- In-process optimizer fallback uses Classical solve, not QAOA, and returns applied_to_sumo=false until a later integration apply stage.
+- Route flow reassignment is advertised unavailable; loaded flow-backed demand cannot be safely reassigned by current runtime interface.
+- VIP vehicle/entity assignment is unavailable; only corridor preference is supported.
+- Signal timing is limited to supported active-program phases/duration; fixed phases cannot be independently edited.
+- Weather is a configured speed-factor simulation profile, not measured environmental data.
+- Construction profile is a modeled speed/cost restriction; only closure mode changes access permissions.
+- Historical helper modules may not be wired into active flow; ScenarioManager and TrafficLightManager active use is not established.
+
+RUNTIME LIMITATIONS:
+- SUMO installation/version, current server PID/state, current Quantum API health and current browser are not inspected here.
+- Temporary operator states and event history are mostly process-memory state.
+- No live tests, browser inspection or simulations were run for this document.
+
+CONFIGURATION DEPENDENCIES: SUMO binaries/Python modules, scenario XML consistency, operator_profiles.json, corridor/TLS mappings and the separate Quantum environment.
+NOT ESTABLISHED: full live train service, every feature’s current end-to-end operation, external service start command, current process health and cross-version compatibility.
+
+40. FEATURE STATUS MATRIX
+
+| Feature | Implemented | Runtime dependency | User accessible | Real SUMO effect | Readback | Status from source |
+| Startup/lifecycle | yes | Python/SUMO | yes | starts/stops contexts | health/snapshots | implemented; live not verified |
+| Normal/Event/density | yes | route XML/SUMO | yes | demand loaded on scenario start/reset | config/snapshot | implemented; live not verified |
+| Vehicle/pedestrian telemetry | yes | TraCI | yes | read-only telemetry | snapshot | implemented; live not verified |
+| Train operation | helper + stops/config | SUMO demand/wiring | map/UI context | not established | not established | partial/not established |
+| 3D roads/landmarks | yes | geometry API/Three.js | yes | visualization only | geometry/state API | implemented; visual runtime not verified |
+| Paired simulation | yes | two SUMO processes | yes | yes | pair snapshots | implemented; live not verified |
+| Optimization | yes | external service or local Classical fallback | yes | only on apply stage | status/application result | implemented; live not verified |
+| Route Operations | yes | live routes/profile | yes | vehicle setRoute/preference | route readback/rollback | implemented with rejection constraints; live not verified |
+| Block new entry | conditional | flows/current routes | yes | safe restriction only | preflight/readback | conditional/partial |
+| Signal timing | dynamic | live TLS program | yes | set duration for supported phase | live state | conditional |
+| Weather | yes | operator profile/TraCI | yes | speed factors | state/readback | simulated profile |
+| Construction profile | yes | profile/TraCI | yes | speed/cost profile | state/readback | implemented |
+| Construction closure | conditional | live lane permissions | yes | permission change | restore/readback | conditional |
+| VIP corridor preference | yes | mapped corridors | yes | route preference | state | implemented; runtime not verified |
+| VIP entity | no current entity | demand definition | capability reports unavailable | no | n/a | unsupported |
+| Explainability | yes | latest plan/live metrics | yes | none directly | API plan/live data | implemented; recommendation quality not verified |
+| WebSocket/events | yes | backend/browser | yes | telemetry only | event payload | implemented; live not verified |
+| Theme/camera | yes | browser | yes | none | browser storage/rendering | implemented; browser not verified |
+
+41. 5-MINUTE PROJECT UNDERSTANDING
+
+1. SUMO owns vehicle movement on the provided Chepauk road graph and normal/event demand files.
+2. Python starts two SUMO instances and controls both with TraCI.
+3. FastAPI at 127.0.0.1:8000 exposes simulation control, state, network geometry and operator APIs.
+4. The browser receives geometry and live snapshots, then draws them with Three.js.
+5. Optimization sends live context to a separate Quantum API at 8001; if unavailable, the client can invoke a local Classical solver.
+6. Optimizer plans only affect SUMO after mapping, validation and application; supported operations read back and may roll back.
+
+42. 15-MINUTE TECHNICAL UNDERSTANDING
+
+Start with python/config.py and python/main.py for paths/listener/startup safety. Read scenario_inputs.py and the SUMO .sumocfg/.rou.xml files for topology, route preflight and demand. Follow server.py startup into SimulationPair.start and TraCIController.start/_simulation_loop/_extract_snapshot. Inspect network_exporter.py and renderer3d.js for the coordinate conversion and geometry flow. For optimization, trace server trigger -> OptimizationJobManager -> QuantumOptimizationClient -> schemas -> QuantumToTrafficMapper -> ConstraintEngine -> TraCIAdapter. For operator operations, read capabilities/state, then SimulationPair transaction and Controller snapshot/restore. Finally inspect OperatorExpiryManager and /ws/simulation to understand temporary state and browser updates.
+
+43. PROJECT PRESENTATION FLOW
+
+Demonstration sequence supported by source (runtime success must be confirmed during the actual presentation):
+1. Start Digital Twin with python -m python.main and show health/status.
+2. Select Normal Day and Event Day and explain that demand files differ.
+3. Show live Classical and Quantum SUMO contexts and paired state.
+4. Show 3D network and live telemetry; point out geometry comes from SUMO and vehicles from TraCI.
+5. Request an optimization; identify the actual solver returned (QAOA service or Classical fallback), bitstring, objective and runtime.
+6. Show a result plan and explainability output, distinguishing recommendation from applied mutation.
+7. If capabilities and current state allow, apply a route operation or signal timing and show backend readback; if rejected, explain the actual constraint rather than claiming success.
+8. Show weather as a simulated profile and distinguish construction profile from physical closure.
+9. Show operator timer/clear only when backend reports active state.
+10. Compare paired metrics and state the values actually returned; do not claim unmeasured savings.
+
+44. DOCUMENTATION NOTES
+
+This document was generated from the current local source tree and file inventory. Source claims should be rechecked if code/configuration changes. Historical reports are listed for inventory only and were not used as implementation proof. The temporary optimizer mirror is explicitly identified as a test artifact. The Quantum service implementation is external to the primary source tree, so the document separates client behavior from unverified service-runtime behavior. Exact installed versions, active process health, browser rendering, live counts and end-to-end outcomes were not verified. No tests or simulation commands were executed.
+
+============================================================
+END OF PROJECT DOCUMENTATION
+============================================================

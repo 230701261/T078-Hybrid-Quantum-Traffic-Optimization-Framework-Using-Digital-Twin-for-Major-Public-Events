@@ -1,12 +1,27 @@
 {
   "weather": {
-    "clear": {"speed_factor": 1.0, "description": "No weather speed adjustment"},
+    "clear": {"speed_factor": 1.0, "description": "No weather speed adjustment", "baseline": true},
     "rain": {"speed_factor": 0.9, "description": "Configured reduced lane speed"},
     "heavy rain": {"speed_factor": 0.75, "description": "Configured reduced lane speed"},
     "fog": {"speed_factor": 0.8, "description": "Configured reduced lane speed"}
   },
-  "construction": {"speed_cap_mps": 2.0, "travel_time_factor": 2.0},
-  "vip": {"travel_time_factor": 0.75},
+  "construction": {"speed_cap_mps": 2.0, "travel_time_factor": 2.0, "default_duration_seconds": 30, "duration_options": [15, 30, 60], "supported_modes": ["profile", "closure"]},
+  "vip": {"travel_time_factor": 0.75, "default_duration_seconds": 15, "duration_options": [15, 30, 60]},
+  "route_operations": {
+    "diversion_min": 0,
+    "diversion_max": 100,
+    "diversion_step": 1,
+    "default_diversion_share": 0,
+    "duration_options": [15, 30, 60],
+    "default_duration_seconds": 30,
+    "eligible_vehicle_classes": ["passenger", "taxi", "bus", "motorcycle"],
+    "near_destination_remaining_edges": 0
+  },
+  "signal_timing": {
+    "minimum_duration_s": 1,
+    "maximum_duration_s": 240,
+    "supported_operations": ["phase_duration"]
+  },
   "optimization": {
     "route_priority_multiplier": 0.8,
     "restriction_speed_factor": 0.6,

@@ -18,6 +18,7 @@ PORT = 8000
 # Simulation constants
 SIM_STEP_LENGTH = 0.5  # seconds
 TARGET_FPS = 30
+QUANTUM_HEALTH_TIMEOUT_SECONDS = 1.0
 
 # Configurable Train Timetable and Dwell Durations
 TRAIN_INTERVAL_NORMAL = 140.0  # seconds between train arrivals on Normal Day

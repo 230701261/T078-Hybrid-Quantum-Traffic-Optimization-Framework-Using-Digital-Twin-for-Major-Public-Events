@@ -1,0 +1,796 @@
+{
+    "Anna Salai": [
+        {
+            "from": 30037899,
+            "to": 247690829,
+            "length": 57.94,
+            "oneway": true
+        },
+        {
+            "from": 30037903,
+            "to": 30037904,
+            "length": 16.85,
+            "oneway": true
+        },
+        {
+            "from": 30037904,
+            "to": 309061751,
+            "length": 38.69,
+            "oneway": true
+        },
+        {
+            "from": 247690829,
+            "to": 2482072915,
+            "length": 12.57,
+            "oneway": true
+        },
+        {
+            "from": 309061637,
+            "to": 11936481870,
+            "length": 267.39,
+            "oneway": true
+        },
+        {
+            "from": 309061637,
+            "to": 11936481870,
+            "length": 267.39,
+            "oneway": true
+        },
+        {
+            "from": 309061751,
+            "to": 309061742,
+            "length": 134.03,
+            "oneway": true
+        },
+        {
+            "from": 309061989,
+            "to": 12841989271,
+            "length": 228.34,
+            "oneway": true
+        },
+        {
+            "from": 309178281,
+            "to": 12841989270,
+            "length": 208.49,
+            "oneway": true
+        },
+        {
+            "from": 2214509428,
+            "to": 2482072909,
+            "length": 26.54,
+            "oneway": true
+        },
+        {
+            "from": 2214509441,
+            "to": 2214509428,
+            "length": 12.21,
+            "oneway": true
+        },
+        {
+            "from": 2482072909,
+            "to": 12478119245,
+            "length": 69.81,
+            "oneway": true
+        },
+        {
+            "from": 2482072915,
+            "to": 30037903,
+            "length": 451.47,
+            "oneway": true
+        },
+        {
+            "from": 2482072920,
+            "to": 2214509441,
+            "length": 44.81,
+            "oneway": true
+        },
+        {
+            "from": 2489157872,
+            "to": 12035794039,
+            "length": 120.42,
+            "oneway": true
+        },
+        {
+            "from": 2489157876,
+            "to": 2489157872,
+            "length": 14.33,
+            "oneway": true
+        },
+        {
+            "from": 11936481870,
+            "to": 2489157876,
+            "length": 31.68,
+            "oneway": true
+        },
+        {
+            "from": 12035794039,
+            "to": 2482072920,
+            "length": 292.59,
+            "oneway": true
+        },
+        {
+            "from": 12478119243,
+            "to": 10968481991,
+            "length": 103.66,
+            "oneway": true
+        },
+        {
+            "from": 12478119245,
+            "to": 309061989,
+            "length": 8.17,
+            "oneway": true
+        },
+        {
+            "from": 12841989270,
+            "to": 12478119243,
+            "length": 20.51,
+            "oneway": true
+        },
+        {
+            "from": 12841989271,
+            "to": 12841989269,
+            "length": 5.65,
+            "oneway": true
+        }
+    ],
+    "Triplicane High Road": [
+        {
+            "from": 243066056,
+            "to": 262675992,
+            "length": 38.73,
+            "oneway": false
+        },
+        {
+            "from": 247690631,
+            "to": 11056437675,
+            "length": 45.58,
+            "oneway": false
+        },
+        {
+            "from": 247690631,
+            "to": 247874860,
+            "length": 74.65,
+            "oneway": false
+        },
+        {
+            "from": 247691283,
+            "to": 2214509300,
+            "length": 14.07,
+            "oneway": false
+        },
+        {
+            "from": 247691283,
+            "to": 259057068,
+            "length": 21.35,
+            "oneway": false
+        },
+        {
+            "from": 247874843,
+            "to": 259057619,
+            "length": 44.89,
+            "oneway": false
+        },
+        {
+            "from": 247874843,
+            "to": 247973367,
+            "length": 137.36,
+            "oneway": false
+        },
+        {
+            "from": 247874844,
+            "to": 259057619,
+            "length": 37.04,
+            "oneway": false
+        },
+        {
+            "from": 247874844,
+            "to": 604707662,
+            "length": 70.47,
+            "oneway": false
+        },
+        {
+            "from": 247874860,
+            "to": 247690631,
+            "length": 74.65,
+            "oneway": false
+        },
+        {
+            "from": 247874860,
+            "to": 247874863,
+            "length": 101.21,
+            "oneway": false
+        },
+        {
+            "from": 247874863,
+            "to": 2217344536,
+            "length": 7.12,
+            "oneway": false
+        },
+        {
+            "from": 247874863,
+            "to": 247874860,
+            "length": 101.21,
+            "oneway": false
+        },
+        {
+            "from": 247874876,
+            "to": 259057576,
+            "length": 21.35,
+            "oneway": false
+        },
+        {
+            "from": 247874876,
+            "to": 2217344536,
+            "length": 50.02,
+            "oneway": false
+        },
+        {
+            "from": 247874884,
+            "to": 259057427,
+            "length": 25.36,
+            "oneway": false
+        },
+        {
+            "from": 247874884,
+            "to": 9904659746,
+            "length": 4.8,
+            "oneway": false
+        },
+        {
+            "from": 247874895,
+            "to": 259057405,
+            "length": 20.31,
+            "oneway": false
+        },
+        {
+            "from": 247874895,
+            "to": 259057411,
+            "length": 32.84,
+            "oneway": false
+        },
+        {
+            "from": 247973367,
+            "to": 247874843,
+            "length": 137.36,
+            "oneway": false
+        },
+        {
+            "from": 247973367,
+            "to": 259057878,
+            "length": 14.58,
+            "oneway": false
+        },
+        {
+            "from": 247973369,
+            "to": 259057962,
+            "length": 18.34,
+            "oneway": false
+        },
+        {
+            "from": 247973369,
+            "to": 259057963,
+            "length": 28.57,
+            "oneway": false
+        },
+        {
+            "from": 247973370,
+            "to": 259057963,
+            "length": 76.36,
+            "oneway": false
+        },
+        {
+            "from": 247973370,
+            "to": 259057928,
+            "length": 39.74,
+            "oneway": false
+        },
+        {
+            "from": 247973371,
+            "to": 259057928,
+            "length": 44.63,
+            "oneway": false
+        },
+        {
+            "from": 247973371,
+            "to": 259058266,
+            "length": 89.15,
+            "oneway": false
+        },
+        {
+            "from": 259057068,
+            "to": 247691283,
+            "length": 21.35,
+            "oneway": false
+        },
+        {
+            "from": 259057068,
+            "to": 259057405,
+            "length": 98.67,
+            "oneway": false
+        },
+        {
+            "from": 259057319,
+            "to": 259057414,
+            "length": 32.14,
+            "oneway": false
+        },
+        {
+            "from": 259057319,
+            "to": 259057427,
+            "length": 11.66,
+            "oneway": false
+        },
+        {
+            "from": 259057349,
+            "to": 259057411,
+            "length": 40.64,
+            "oneway": false
+        },
+        {
+            "from": 259057349,
+            "to": 259057414,
+            "length": 6.77,
+            "oneway": false
+        },
+        {
+            "from": 259057405,
+            "to": 247874895,
+            "length": 20.31,
+            "oneway": false
+        },
+        {
+            "from": 259057405,
+            "to": 259057068,
+            "length": 98.67,
+            "oneway": false
+        },
+        {
+            "from": 259057411,
+            "to": 247874895,
+            "length": 32.84,
+            "oneway": false
+        },
+        {
+            "from": 259057411,
+            "to": 259057349,
+            "length": 40.64,
+            "oneway": false
+        },
+        {
+            "from": 259057414,
+            "to": 259057349,
+            "length": 6.77,
+            "oneway": false
+        },
+        {
+            "from": 259057414,
+            "to": 259057319,
+            "length": 32.14,
+            "oneway": false
+        },
+        {
+            "from": 259057427,
+            "to": 259057319,
+            "length": 11.66,
+            "oneway": false
+        },
+        {
+            "from": 259057427,
+            "to": 247874884,
+            "length": 25.36,
+            "oneway": false
+        },
+        {
+            "from": 259057444,
+            "to": 259057576,
+            "length": 25.38,
+            "oneway": false
+        },
+        {
+            "from": 259057444,
+            "to": 9904659746,
+            "length": 80.86,
+            "oneway": false
+        },
+        {
+            "from": 259057576,
+            "to": 259057444,
+            "length": 25.38,
+            "oneway": false
+        },
+        {
+            "from": 259057576,
+            "to": 247874876,
+            "length": 21.35,
+            "oneway": false
+        },
+        {
+            "from": 259057619,
+            "to": 247874844,
+            "length": 37.04,
+            "oneway": false
+        },
+        {
+            "from": 259057619,
+            "to": 247874843,
+            "length": 44.89,
+            "oneway": false
+        },
+        {
+            "from": 259057878,
+            "to": 247973367,
+            "length": 14.58,
+            "oneway": false
+        },
+        {
+            "from": 259057878,
+            "to": 259057893,
+            "length": 85.48,
+            "oneway": false
+        },
+        {
+            "from": 259057893,
+            "to": 259057878,
+            "length": 85.48,
+            "oneway": false
+        },
+        {
+            "from": 259057893,
+            "to": 259057962,
+            "length": 42.42,
+            "oneway": false
+        },
+        {
+            "from": 259057928,
+            "to": 247973370,
+            "length": 39.74,
+            "oneway": false
+        },
+        {
+            "from": 259057928,
+            "to": 247973371,
+            "length": 44.63,
+            "oneway": false
+        },
+        {
+            "from": 259057962,
+            "to": 259057893,
+            "length": 42.42,
+            "oneway": false
+        },
+        {
+            "from": 259057962,
+            "to": 247973369,
+            "length": 18.34,
+            "oneway": false
+        },
+        {
+            "from": 259057963,
+            "to": 247973369,
+            "length": 28.57,
+            "oneway": false
+        },
+        {
+            "from": 259057963,
+            "to": 247973370,
+            "length": 76.36,
+            "oneway": false
+        },
+        {
+            "from": 259058266,
+            "to": 262675992,
+            "length": 69.24,
+            "oneway": false
+        },
+        {
+            "from": 259058266,
+            "to": 247973371,
+            "length": 89.15,
+            "oneway": false
+        },
+        {
+            "from": 262675992,
+            "to": 259058266,
+            "length": 69.24,
+            "oneway": false
+        },
+        {
+            "from": 262675992,
+            "to": 243066056,
+            "length": 38.73,
+            "oneway": false
+        },
+        {
+            "from": 604707662,
+            "to": 11056437675,
+            "length": 26.68,
+            "oneway": false
+        },
+        {
+            "from": 604707662,
+            "to": 247874844,
+            "length": 70.47,
+            "oneway": false
+        },
+        {
+            "from": 2214509300,
+            "to": 247691283,
+            "length": 14.07,
+            "oneway": false
+        },
+        {
+            "from": 2217344536,
+            "to": 247874876,
+            "length": 50.02,
+            "oneway": false
+        },
+        {
+            "from": 2217344536,
+            "to": 247874863,
+            "length": 7.12,
+            "oneway": false
+        },
+        {
+            "from": 9904659746,
+            "to": 247874884,
+            "length": 4.8,
+            "oneway": false
+        },
+        {
+            "from": 9904659746,
+            "to": 259057444,
+            "length": 80.86,
+            "oneway": false
+        },
+        {
+            "from": 11056437675,
+            "to": 247690631,
+            "length": 45.58,
+            "oneway": false
+        },
+        {
+            "from": 11056437675,
+            "to": 604707662,
+            "length": 26.68,
+            "oneway": false
+        }
+    ],
+    "Wallajah Road": [
+        {
+            "from": 247691283,
+            "to": 259057030,
+            "length": 10.72,
+            "oneway": true
+        },
+        {
+            "from": 247691285,
+            "to": 12679975162,
+            "length": 42.36,
+            "oneway": true
+        },
+        {
+            "from": 247691286,
+            "to": 247691285,
+            "length": 146.72,
+            "oneway": true
+        },
+        {
+            "from": 247691288,
+            "to": 247691286,
+            "length": 112.56,
+            "oneway": true
+        },
+        {
+            "from": 247692001,
+            "to": 5949482265,
+            "length": 294.52,
+            "oneway": true
+        },
+        {
+            "from": 258991748,
+            "to": 2214509243,
+            "length": 136.84,
+            "oneway": true
+        },
+        {
+            "from": 259057030,
+            "to": 2214509308,
+            "length": 135.02,
+            "oneway": true
+        },
+        {
+            "from": 259057610,
+            "to": 11059270206,
+            "length": 265.92,
+            "oneway": true
+        },
+        {
+            "from": 270432724,
+            "to": 259057610,
+            "length": 15.75,
+            "oneway": true
+        },
+        {
+            "from": 270432755,
+            "to": 258991748,
+            "length": 111.7,
+            "oneway": true
+        },
+        {
+            "from": 2214509241,
+            "to": 6816905970,
+            "length": 107.74,
+            "oneway": true
+        },
+        {
+            "from": 2214509243,
+            "to": 247691288,
+            "length": 12.39,
+            "oneway": true
+        },
+        {
+            "from": 2214509243,
+            "to": 9904659744,
+            "length": 51.08,
+            "oneway": true
+        },
+        {
+            "from": 2214509249,
+            "to": 2214509241,
+            "length": 141.83,
+            "oneway": true
+        },
+        {
+            "from": 2214509249,
+            "to": 2214509243,
+            "length": 17.24,
+            "oneway": true
+        },
+        {
+            "from": 2214509300,
+            "to": 2214509249,
+            "length": 551.77,
+            "oneway": true
+        },
+        {
+            "from": 2214509308,
+            "to": 2482072908,
+            "length": 95.1,
+            "oneway": true
+        },
+        {
+            "from": 2214509428,
+            "to": 247690829,
+            "length": 11.95,
+            "oneway": true
+        },
+        {
+            "from": 2482072908,
+            "to": 2214509428,
+            "length": 31.32,
+            "oneway": true
+        },
+        {
+            "from": 2482072912,
+            "to": 2214509300,
+            "length": 232.02,
+            "oneway": true
+        },
+        {
+            "from": 2482072920,
+            "to": 2482072912,
+            "length": 61.64,
+            "oneway": true
+        },
+        {
+            "from": 5949482265,
+            "to": 270432724,
+            "length": 14.65,
+            "oneway": true
+        },
+        {
+            "from": 6816905970,
+            "to": 247692001,
+            "length": 12.47,
+            "oneway": true
+        },
+        {
+            "from": 11059270206,
+            "to": 270432755,
+            "length": 40.69,
+            "oneway": true
+        },
+        {
+            "from": 12679975162,
+            "to": 247691283,
+            "length": 245.2,
+            "oneway": true
+        }
+    ],
+    "Kamarajar Salai": [
+        {
+            "from": 247692589,
+            "to": 9904715152,
+            "length": 26.2,
+            "oneway": true
+        },
+        {
+            "from": 259057603,
+            "to": 9904659742,
+            "length": 6.88,
+            "oneway": true
+        },
+        {
+            "from": 259057610,
+            "to": 5949482265,
+            "length": 12.85,
+            "oneway": true
+        },
+        {
+            "from": 259058211,
+            "to": 321842104,
+            "length": 340.23,
+            "oneway": true
+        },
+        {
+            "from": 270432724,
+            "to": 310728374,
+            "length": 750.92,
+            "oneway": true
+        },
+        {
+            "from": 270432726,
+            "to": 270432724,
+            "length": 416.44,
+            "oneway": true
+        },
+        {
+            "from": 310728374,
+            "to": 12465410979,
+            "length": 6.91,
+            "oneway": true
+        },
+        {
+            "from": 321842104,
+            "to": 259057603,
+            "length": 171.47,
+            "oneway": true
+        },
+        {
+            "from": 1279571365,
+            "to": 259058211,
+            "length": 79.6,
+            "oneway": true
+        },
+        {
+            "from": 5949482265,
+            "to": 247692589,
+            "length": 408.45,
+            "oneway": true
+        },
+        {
+            "from": 9904659742,
+            "to": 259057610,
+            "length": 743.96,
+            "oneway": true
+        },
+        {
+            "from": 9904715152,
+            "to": 10536336569,
+            "length": 597.51,
+            "oneway": true
+        },
+        {
+            "from": 9983146252,
+            "to": 270432726,
+            "length": 203.38,
+            "oneway": true
+        },
+        {
+            "from": 12465410979,
+            "to": 310728484,
+            "length": 512.74,
+            "oneway": true
+        }
+    ]
+}

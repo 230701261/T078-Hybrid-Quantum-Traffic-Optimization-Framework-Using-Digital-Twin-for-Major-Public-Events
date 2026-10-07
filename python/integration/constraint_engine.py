@@ -37,7 +37,7 @@ class ConstraintEngine:
             else:
                 edge_ids = set(edge_ids)
             if tls_ids is None:
-                tls_ids = set(traci.trafficlight.getIDList()) if action in {"signal_extension", "signal_timing"} else set()
+                tls_ids = set(traci.trafficlight.getIDList()) if action in {"signal_extension", "signal_timing", "signal_state"} else set()
             else:
                 tls_ids = set(tls_ids)
         except Exception:
@@ -75,13 +75,66 @@ class ConstraintEngine:
                     else:
                         phase = logic.phases[phase_index]
                         min_d, max_d = float(phase.minDur), float(phase.maxDur)
-                        if min_d > 0 and max_d > 0 and abs(max_d - min_d) <= 1e-6:
+                        if min_d <= 0 or max_d <= 0 or abs(max_d - min_d) <= 1e-6:
                             add("UNSUPPORTED_TLS_TIMING", "Active TLS phase has fixed min/max duration")
                         elif cls._positive_finite(duration) and (
                                 (min_d > 0 and duration < min_d) or (max_d > 0 and duration > max_d)):
                             add("INVALID_TIMING", "Requested duration is outside the phase bounds")
+                        else:
+                            from ..scenario_inputs import operator_profiles
+                            limits = operator_profiles()["signal_timing"]
+                            lower = float(limits["minimum_duration_s"])
+                            upper = float(limits["maximum_duration_s"])
+                            if cls._positive_finite(duration) and not lower <= float(duration) <= upper:
+                                add("INVALID_TIMING", "Requested duration is outside configured safe limits")
                 except Exception:
                     add("LIVE_PREFLIGHT_UNAVAILABLE", "Could not inspect the active TLS program")
+        elif action == "signal_state":
+            phase_index = params.get("phase")
+            duration = params.get("duration_s")
+            requested = str(params.get("state", "")).upper()
+            if target not in tls_ids:
+                add("INVALID_TLS", f"Unknown traffic light {target!r}")
+            if requested not in {"RED", "GREEN"} or isinstance(phase_index, bool) or not isinstance(phase_index, int):
+                add("INVALID_SIGNAL_STATE", "A discovered RED/GREEN state and phase are required")
+            if not cls._positive_finite(duration):
+                add("INVALID_TIMING", "duration_s must be finite and positive")
+            if target in tls_ids and requested in {"RED", "GREEN"} and isinstance(phase_index, int) and not isinstance(phase_index, bool):
+                try:
+                    program = traci.trafficlight.getProgram(target)
+                    logic = next((item for item in traci.trafficlight.getCompleteRedYellowGreenDefinition(target)
+                                  if str(item.programID) == str(program)), None)
+                    if logic is None or phase_index < 0 or phase_index >= len(logic.phases):
+                        add("UNSUPPORTED_TLS_PHASE", "Requested signal state is absent from the active program")
+                    else:
+                        phase = logic.phases[phase_index]
+                        state = str(phase.state)
+                        supports = (any(char in state for char in "gG") and not any(char in state for char in "yY")) if requested == "GREEN" else bool(state) and all(char in "rR" for char in state)
+                        if not supports:
+                            add("INVALID_SIGNAL_STATE", "Selected phase does not represent the requested live signal state")
+                        elif cls._positive_finite(duration):
+                            minimum, maximum = float(phase.minDur), float(phase.maxDur)
+                            fixed = minimum <= 0 or maximum <= 0 or abs(maximum - minimum) <= 1e-6
+                            if fixed and abs(float(duration) - float(phase.duration)) > 1e-6:
+                                add("UNSUPPORTED_TLS_TIMING", "Active signal phase has a fixed duration")
+                            elif not fixed and (duration < minimum or duration > maximum):
+                                add("INVALID_TIMING", "Requested duration is outside the phase bounds")
+                            else:
+                                from ..scenario_inputs import operator_profiles
+                                limits = operator_profiles()["signal_timing"]
+                                if not float(limits["minimum_duration_s"]) <= float(duration) <= float(limits["maximum_duration_s"]):
+                                    add("INVALID_TIMING", "Requested duration is outside configured safe limits")
+                except Exception:
+                    add("LIVE_PREFLIGHT_UNAVAILABLE", "Could not inspect the active TLS program")
+        elif action == "operator_entry_block":
+            if target not in edge_ids:
+                add("INVALID_EDGE", f"Unknown SUMO edge {target!r}")
+            if params.get("blocked") is not True:
+                add("INVALID_COMMAND", "operator_entry_block only supports enabling a block")
+            if params.get("scheduled_flow_conflict"):
+                add("SCHEDULED_FLOW_CONFLICT", f"Scheduled demand depends on corridor edge {target!r}")
+            if params.get("active_route_conflict"):
+                add("ACTIVE_ROUTE_CONFLICT", f"An active vehicle still depends on corridor edge {target!r}")
         elif action == "operator_edge_control":
             if not isinstance(params.get("blocked"), bool):
                 add("INVALID_COMMAND", "blocked must be a boolean")

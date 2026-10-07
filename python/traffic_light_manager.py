@@ -34,6 +34,26 @@ class TrafficLightManager:
                 phase_idx = traci.trafficlight.getPhase(tl_id)
                 phase_duration = traci.trafficlight.getPhaseDuration(tl_id)
                 remaining = traci.trafficlight.getNextSwitch(tl_id) - traci.simulation.getTime()
+                controlled_links = []
+                try:
+                    for link_index, link_group in enumerate(traci.trafficlight.getControlledLinks(tl_id)):
+                        incoming_edges = set()
+                        for link in link_group:
+                            if not link or not link[0]:
+                                continue
+                            try:
+                                incoming_edges.add(traci.lane.getEdgeID(link[0]))
+                            except Exception:
+                                continue
+                        controlled_links.append({
+                            "index": link_index,
+                            "state": state_str[link_index] if link_index < len(state_str) else "-",
+                            "incoming_edges": sorted(incoming_edges),
+                        })
+                except Exception:
+                    # Older SUMO/TraCI builds may not expose controlled-link
+                    # metadata; the renderer falls back to the TLS aggregate.
+                    controlled_links = []
                 
                 # Determine predominant color for simple rendering
                 predominant = "green"
@@ -49,6 +69,7 @@ class TrafficLightManager:
                     "phase": phase_idx,
                     "state": state_str,
                     "color": predominant,
+                    "controlled_links": controlled_links,
                     "phase_duration_s": round(float(phase_duration), 1),
                     "seconds_to_switch": round(max(0.0, float(remaining)), 1)
                 }

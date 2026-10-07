@@ -1,26 +1,34 @@
 import asyncio
+import ipaddress
 import json
 import math
 import copy
+import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
+import traci
 from collections import deque
 from datetime import datetime, timezone
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, HTTPException, status
+from pathlib import Path
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, HTTPException, Request, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Set, Dict, Any, Optional
 
-from .config import UI_DIR
+from .config import UI_DIR, QUANTUM_HEALTH_TIMEOUT_SECONDS
 from .traci_controller import TraCIController
 from .network_exporter import get_network_geometry
 from .integration import OptimizationJobManager, SupabaseRepository
+from .integration.constraint_engine import ConstraintEngine
 from .integration.id_mapper import CORRIDOR_MAP, JUNCTION_MAP
-from .scenario_inputs import default_density, validate_density, operator_profiles
+from .scenario_inputs import (RouteValidationError, default_density, validate_density,
+                              validate_scenario_routes, operator_profiles)
 from .simulation_pair import SimulationPair
 from .comparison import compare_measurements, measured_delta
 from .input_validation import validate_message_id
+from .operator_expiry import OperatorExpiryManager
+from .route_explainability import explain_plan, load_variable_definitions
 
 app = FastAPI(
     title="SUMO TraCI + Quantum Traffic Digital Twin Server",
@@ -44,6 +52,8 @@ job_manager = OptimizationJobManager(traci_context=quantum_controller.traci_sess
 active_connections: Set[WebSocket] = set()
 operation_events = deque(maxlen=500)
 optimization_status: Dict[str, Any] = {"stage": "IDLE", "message_id": None, "run_id": None}
+latest_explainability: Optional[Dict[str, Any]] = None
+operator_expiry: OperatorExpiryManager
 
 
 def record_event(category: str, message: str, details: Optional[Dict[str, Any]] = None):
@@ -62,7 +72,9 @@ def record_event(category: str, message: str, details: Optional[Dict[str, Any]] 
 
 def clear_current_optimization():
     """A new paired SUMO run has not received actions from the prior run."""
+    global latest_explainability
     job_manager.latest_plan = None
+    latest_explainability = None
 
 
 def on_optimization_status(event: Dict[str, Any]):
@@ -105,12 +117,36 @@ async def startup_event():
     global CACHED_GEOMETRY
     CACHED_GEOMETRY = get_network_geometry()
     # Start two real, isolated SUMO/TraCI runs with identical inputs.
-    simulation_pair.start("normal_day", default_density("normal_day"), {"constraints": {"weather": "clear"}})
+    try:
+        validate_scenario_routes("normal_day")
+    except RouteValidationError as ex:
+        print(f"[ROUTE_INVALID] {ex}")
+        raise RuntimeError(f"[ROUTE_INVALID] {ex}") from ex
+    print("[SUMO] Starting Classical and Quantum simulation contexts...")
+    operator_expiry.start()
+    started = simulation_pair.start("normal_day", default_density("normal_day"), {"constraints": {"weather": "clear"}})
+    if not started:
+        errors = {
+            "classical": controller.last_error,
+            "quantum": quantum_controller.last_error,
+        }
+        simulation_pair.close()
+        print(f"[SUMO_START_FAILED] Paired simulation startup failed: {errors}")
+        raise RuntimeError(f"[SUMO_START_FAILED] Paired simulation startup failed: {errors}")
     record_event("system", "Synchronized baseline and optimized simulations started")
+    print("[SUMO] Classical and Quantum TraCI contexts connected.")
     asyncio.create_task(broadcast_simulation_stream())
 
+
+@app.get("/api/health")
+async def health():
+    """Stable local identity endpoint used only to detect duplicate launchers."""
+    return {"service_id": "traffic-digital-twin", "status": "running",
+            "simulation_state": simulation_pair.lifecycle_state}
+
 @app.on_event("shutdown")
-def shutdown_event():
+async def shutdown_event():
+    await operator_expiry.stop()
     simulation_pair.close()
 
 async def broadcast_simulation_stream():
@@ -124,16 +160,13 @@ async def broadcast_simulation_stream():
             }
             state_data["pair"] = simulation_pair.snapshot()
             state_data["events"] = list(operation_events)[-40:]
+            state_data["operator_timers"] = operator_expiry.snapshot()
+            if latest_explainability:
+                state_data["route_explainability"] = latest_explainability
 
             # Attach latest quantum optimization summary to live state stream
             if job_manager.latest_plan:
-                state_data["quantum_optimization"] = {
-                    "optimizer_used": job_manager.latest_plan.optimizer_used,
-                    "bitstring": job_manager.latest_plan.bitstring,
-                    "benefits": job_manager.latest_plan.benefits.dict(),
-                    "status": job_manager.latest_plan.status,
-                    "applied": job_manager.latest_plan.applied_to_sumo
-                }
+                state_data["quantum_optimization"] = job_manager.latest_plan.dict()
             state_data["optimization_status"] = dict(optimization_status)
 
             msg = json.dumps(_json_safe(state_data), allow_nan=False)
@@ -227,13 +260,20 @@ async def control_start(scenario: str = Query("normal_day", pattern="^(normal_da
         inputs = {k: v for k, v in simulation_pair.settings.items() if k not in {"scenario", "density"}}
         if not inputs:
             inputs = {"constraints": {"weather": "clear"}}
-        success = await asyncio.to_thread(simulation_pair.start, scenario, density, inputs)
+        try:
+            success = await asyncio.to_thread(simulation_pair.start, scenario, density, inputs)
+        except RouteValidationError as ex:
+            raise HTTPException(status_code=422, detail={"code": "ROUTE_INVALID", "errors": ex.report.get("errors", [])}) from ex
         action = "started"
         if success:
             clear_current_optimization()
     if success:
         record_event("traffic", f"Simulation pair {action}", {"scenario": scenario})
-    return {"status": "ok" if success else "error", "running": success,
+    startup_errors = {name: {"code": context.last_error_code, "message": context.last_error}
+                      for name, context in (("classical", controller), ("quantum", quantum_controller))
+                      if context.last_error}
+    return {"status": "ok" if success else "error", "code": None if success else "SUMO_START_FAILED",
+            "errors": startup_errors, "running": success,
             "lifecycle_state": simulation_pair.lifecycle_state, "action": action,
             "scenario": simulation_pair.scenario_id, "pair_id": simulation_pair.run_id}
 
@@ -259,6 +299,23 @@ async def control_stop():
     await asyncio.to_thread(simulation_pair.stop)
     record_event("traffic", "Both simulations stopped")
     return {"status": "ok", "lifecycle_state": simulation_pair.lifecycle_state}
+
+
+@app.post("/api/control/shutdown")
+async def control_server_shutdown(request: Request):
+    """Gracefully stop this loopback-only server; shutdown hook closes both SUMO sessions."""
+    client_host = request.client.host if request.client else ""
+    try:
+        is_loopback = ipaddress.ip_address(client_host).is_loopback
+    except ValueError:
+        is_loopback = client_host == "testclient"
+    if not is_loopback:
+        raise HTTPException(status_code=403, detail="Server shutdown is available only from localhost")
+    uvicorn_server = getattr(app.state, "uvicorn_server", None)
+    if uvicorn_server is None:
+        raise HTTPException(status_code=503, detail="This server was not started by python.main")
+    uvicorn_server.should_exit = True
+    return {"status": "shutdown_requested", "message": "SUMO sessions will close during server shutdown"}
 
 @app.post("/api/control/reset")
 async def control_reset():
@@ -312,10 +369,53 @@ async def get_network_mappings():
 @app.get("/api/network/routes")
 async def get_network_routes():
     routes = quantum_controller.network_routes()
-    return {"routes": routes,
-            "corridors": [{"id": name, "canonical_id": item.canonical_id,
-                           "edges": item.primary_sumo_edges + item.reverse_sumo_edges}
-                          for name, item in CORRIDOR_MAP.items()],
+    corridors = []
+    if controller.running and quantum_controller.running:
+        live_edges = []
+        for active_controller in (controller, quantum_controller):
+            with active_controller.traci_session():
+                live_edges.append(set(traci.edge.getIDList()))
+        traffic_edges = (quantum_controller.latest_state or {}).get("edges_congestion", {})
+        for name, item in CORRIDOR_MAP.items():
+            edges = list(dict.fromkeys(item.primary_sumo_edges + item.reverse_sumo_edges))
+            if not all(set(edges).issubset(edge_set) for edge_set in live_edges):
+                continue
+            alternatives = []
+            for other_name, other in CORRIDOR_MAP.items():
+                if other_name == name:
+                    continue
+                targets = other.primary_sumo_edges + other.reverse_sumo_edges
+                connected_both = True
+                for active_controller in (controller, quantum_controller):
+                    with active_controller.traci_session():
+                        vehicle_types = traci.vehicletype.getIDList()
+                        candidate_type = next((vtype for vtype in vehicle_types
+                            if traci.vehicletype.getVehicleClass(vtype) in {"passenger", "taxi"}), None)
+                        connected = False
+                        if candidate_type:
+                            for source_edge in item.primary_sumo_edges + item.reverse_sumo_edges:
+                                for target_edge in targets:
+                                    try:
+                                        if traci.simulation.findRoute(source_edge, target_edge, vType=candidate_type).edges:
+                                            connected = True
+                                            break
+                                    except Exception:
+                                        pass
+                                if connected:
+                                    break
+                        connected_both = connected_both and connected
+                if connected_both:
+                    alternatives.append(other_name)
+            states = [traffic_edges.get(edge, {}).get("level") for edge in edges]
+            states = [state for state in states if state]
+            severity = {"FREE": 0, "LOW": 0, "MODERATE": 1, "MEDIUM": 1, "HEAVY": 2, "HIGH": 2, "SEVERE": 3}
+            traffic_state = max(states, key=lambda value: severity.get(str(value).upper(), -1), default="UNKNOWN")
+            corridors.append({"id": name, "display_name": item.description, "canonical_id": item.canonical_id,
+                "edges": edges, "eligible_vehicle_edges": edges,
+                "entry_edges": [item.primary_sumo_edges[0], item.reverse_sumo_edges[0]],
+                "exit_edges": [item.primary_sumo_edges[-1], item.reverse_sumo_edges[-1]],
+                "alternatives": alternatives, "traffic_state": traffic_state})
+    return {"routes": routes, "corridors": corridors,
             "pair_id": simulation_pair.run_id, "scenario_id": simulation_pair.scenario_id,
             "live": bool(quantum_controller.running)}
 
@@ -331,6 +431,9 @@ async def get_network_edges():
 async def get_network_signals():
     classical = controller.network_signals()
     quantum = quantum_controller.network_signals()
+    display_by_tls = {item.sumo_tls_id: item.description for item in JUNCTION_MAP.values()}
+    for signal in classical + quantum:
+        signal["display_name"] = display_by_tls.get(signal["tls_id"], signal["tls_id"])
     return {"classical": classical, "quantum": quantum,
             "pair_id": simulation_pair.run_id,
             "live": controller.running and quantum_controller.running}
@@ -358,12 +461,23 @@ async def get_constraints():
     return {"pair_id": simulation_pair.run_id, "scenario_id": simulation_pair.scenario_id,
             "constraints": copy.deepcopy(inputs.get("constraints", {})),
             "profiles": operator_profiles(),
+            "timers": operator_expiry.snapshot(),
             "readback": {"classical": controller.operator_readback,
                          "quantum": quantum_controller.operator_readback}}
 
 
 @app.get("/api/operator/state")
 async def get_operator_state():
+    signal_states = await asyncio.to_thread(_discover_signal_states)
+    route_timer = operator_expiry.public_record("route_operation")
+    weather_values = [controller.operator_readback.get("weather"), quantum_controller.operator_readback.get("weather")]
+    active_weather = weather_values[0].get("input") if len(weather_values) == 2 and all(
+        isinstance(value, dict) and value.get("verified") is True for value in weather_values
+    ) and weather_values[0].get("input") == weather_values[1].get("input") else None
+    construction_values = [controller.operator_readback.get("construction"), quantum_controller.operator_readback.get("construction")]
+    active_construction = construction_values[0] if len(construction_values) == 2 and all(
+        isinstance(value, dict) and value.get("verified") is True for value in construction_values
+    ) and construction_values[0].get("enabled") == construction_values[1].get("enabled") and construction_values[0].get("corridor") == construction_values[1].get("corridor") else None
     return {"pair_id": simulation_pair.run_id, "scenario_id": simulation_pair.scenario_id,
             "lifecycle_state": simulation_pair.lifecycle_state,
             "density": simulation_pair.settings.get("density"),
@@ -372,7 +486,103 @@ async def get_operator_state():
             "route_modifications": copy.deepcopy(simulation_pair.settings.get("route_modifications", {})),
             "operator_readback": {"classical": controller.operator_readback,
                                   "quantum": quantum_controller.operator_readback},
+            "active_controls": {"route_operation": route_timer, "weather": active_weather,
+                "construction": active_construction,
+                "vip": _paired_profile_state("vip")},
+            "signal_states": signal_states,
+            "timers": operator_expiry.snapshot(),
             "timestamp": datetime.now(timezone.utc).isoformat()}
+
+
+def _paired_profile_state(profile_key: str) -> dict[str, Any] | None:
+    records = [controller.operator_readback.get(profile_key), quantum_controller.operator_readback.get(profile_key)]
+    if len(records) == 2 and all(isinstance(value, dict) and value.get("verified") is True for value in records):
+        if (records[0].get("enabled") == records[1].get("enabled")
+                and records[0].get("corridor") == records[1].get("corridor")):
+            return copy.deepcopy(records[0])
+    return None
+
+
+def _discover_signal_states() -> Dict[str, list[dict[str, Any]]]:
+    output: Dict[str, list[dict[str, Any]]] = {}
+    for side, active in (("classical", controller), ("quantum", quantum_controller)):
+        try:
+            output[side] = active.network_signals() if active.running else []
+        except Exception:
+            output[side] = []
+    return output
+
+
+def _explainability_checks(plan_data: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    checks: Dict[str, Dict[str, Any]] = {}
+    if not quantum_controller.running:
+        return {key: {"valid": None, "errors": [{"code": "LIVE_PREFLIGHT_UNAVAILABLE",
+                                                   "message": "Quantum SUMO is not running"}]}
+                for key in CORRIDOR_MAP}
+    try:
+        with quantum_controller.traci_session():
+            context = quantum_controller.optimizer_constraint_context()
+            for action in plan_data.get("corridors", []):
+                name = action.get("corridor")
+                mapping = CORRIDOR_MAP.get(name)
+                if not mapping or not action.get("enabled"):
+                    continue
+                commands = [{"action_type": "route_diversion", "sumo_target_id": edge,
+                             "parameters": {"priority_multiplier": operator_profiles()["optimization"]["route_priority_multiplier"]}}
+                            for edge in mapping.primary_sumo_edges + mapping.reverse_sumo_edges]
+                validation = ConstraintEngine.validate_batch(commands, context)
+                checks[f"route:{name}"] = {"valid": validation["valid"], "errors": validation["errors"]}
+            for action in plan_data.get("restrictions", []):
+                mapping = CORRIDOR_MAP.get(action.get("corridor"))
+                if not mapping:
+                    continue
+                commands = [{"action_type": "temporary_restriction", "sumo_target_id": edge,
+                             "parameters": {"speed_factor": operator_profiles()["optimization"]["restriction_speed_factor"]}}
+                            for edge in mapping.primary_sumo_edges + mapping.reverse_sumo_edges]
+                validation = ConstraintEngine.validate_batch(commands, context)
+                checks[f"restriction:{action['corridor']}"] = {"valid": validation["valid"], "errors": validation["errors"]}
+            for action in plan_data.get("signal_changes", []):
+                mapping = JUNCTION_MAP.get(action.get("junction"))
+                if not mapping:
+                    continue
+                command = {"action_type": "signal_extension", "sumo_target_id": mapping.sumo_tls_id,
+                           "parameters": {"extra_green": action.get("extra_green")}}
+                validation = ConstraintEngine.validate_batch([command], context)
+                checks[f"signal:{action['junction']}"] = {"valid": validation["valid"], "errors": validation["errors"]}
+    except Exception as exc:
+        return {key: {"valid": None, "errors": [{"code": "LIVE_PREFLIGHT_UNAVAILABLE", "message": str(exc)}]}
+                for key in CORRIDOR_MAP}
+    return checks
+
+
+@app.get("/api/operator/route-explainability")
+async def get_route_explainability():
+    global latest_explainability
+    plan = job_manager.latest_plan
+    if plan is None:
+        def check_quantum_health():
+            url = f"{job_manager.client.service_url.rstrip('/')}/health"
+            try:
+                with urllib.request.urlopen(url, timeout=QUANTUM_HEALTH_TIMEOUT_SECONDS) as response:
+                    payload = json.loads(response.read().decode("utf-8"))
+                    healthy = response.status == 200 and str(payload.get("status", "")).lower() in {"healthy", "ok", "online"}
+                    return "ONLINE" if healthy else "ERROR"
+            except Exception:
+                return "QUANTUM_OFFLINE"
+        health = await asyncio.to_thread(check_quantum_health)
+        status = "WAITING" if health == "ONLINE" else health
+        message = "No optimizer result is available yet." if status == "WAITING" else (
+            "Quantum API is offline; Classical fallback remains available. Run optimization to request a fallback result."
+            if status == "QUANTUM_OFFLINE" else "Quantum health endpoint returned an invalid response.")
+        return {"status": status, "message": message, "corridors": []}
+    plan_data = plan.dict()
+    if str(plan_data.get("status", "")).lower() in {"failed", "rejected"}:
+        return {"status": "UNAVAILABLE", "source": plan_data.get("optimizer_used"),
+                "message": plan_data.get("error") or "Optimizer did not produce a valid decision.", "corridors": []}
+    checks = await asyncio.to_thread(_explainability_checks, plan_data)
+    latest_explainability = _json_safe(explain_plan(plan_data, controller.latest_state, quantum_controller.latest_state,
+                                                     load_variable_definitions(), checks))
+    return latest_explainability
 
 
 async def _apply_constraint_update(constraint_patch: Dict[str, Any], operation: str):
@@ -395,6 +605,81 @@ async def _apply_constraint_update(constraint_patch: Dict[str, Any], operation: 
             "timestamp": datetime.now(timezone.utc).isoformat(), "pair_id": result.get("pair_id")}
 
 
+async def _restore_expired_operator(key: str, original: Dict[str, Any], expired: bool = True):
+    try:
+        if key == "route_operation":
+            result = await asyncio.to_thread(_restore_route_operation_snapshots, original)
+            if not result.get("readback_verified"):
+                raise RuntimeError(result.get("reason") or "Route-control restoration readback failed")
+        elif key in {"vip", "construction_profile"}:
+            result = await _apply_constraint_update(original, f"{key.upper()}_EXPIRED_RESTORED")
+            if not result.get("success"):
+                raise RuntimeError(result.get("reason") or "SUMO readback rejected restoration")
+        elif key == "construction_closure":
+            newly_closed = original.get("newly_closed_edges", [])
+            if newly_closed:
+                result = await asyncio.to_thread(simulation_pair.restore_edges, newly_closed)
+                if not result.get("success"):
+                    raise RuntimeError(f"Could not restore construction closure: {result}")
+            constraints = original.get("constraints", {})
+            if constraints:
+                result = await _apply_constraint_update(constraints, "CONSTRUCTION_EXPIRED_RESTORED")
+                if not result.get("success"):
+                    raise RuntimeError(result.get("reason") or "Constraint restoration failed")
+    except Exception as exc:
+        event = {"route_operation": "ROUTE_OPERATION_RESTORE_ERROR",
+                 "construction_profile": "CONSTRUCTION_RESTORE_ERROR",
+                 "construction_closure": "CONSTRUCTION_RESTORE_ERROR"}.get(key, f"{key.upper()}_RESTORATION_ERROR")
+        record_event("system", event, {"error": str(exc)})
+        raise
+    event = ({"route_operation": "ROUTE_OPERATION_EXPIRED",
+              "construction_profile": "CONSTRUCTION_EXPIRED",
+              "construction_closure": "CONSTRUCTION_EXPIRED"}.get(key, f"{key.upper()}_TIMER_EXPIRED")
+             if expired else {"construction_profile": "CONSTRUCTION_CLEARED",
+                             "construction_closure": "CONSTRUCTION_CLEARED"}.get(key, f"{key.upper()}_CLEARED"))
+    record_event("traffic", event, {"restored": True,
+        "source_corridor_id": original.get("source_corridor_id"),
+        "alternative_corridor_id": original.get("alternative_corridor_id"),
+        "requested_diversion_share": original.get("requested_diversion_share"),
+        "block_new_entry": original.get("block_new_entry")})
+
+
+operator_expiry = OperatorExpiryManager(_restore_expired_operator)
+
+
+def _duration_seconds(request_body: Dict[str, Any], group: str) -> float:
+    configured = operator_profiles()[group]["default_duration_seconds"]
+    duration = request_body.get(f"{group}_duration_seconds", request_body.get("duration_seconds", configured))
+    if isinstance(duration, bool) or not isinstance(duration, (int, float)) or not math.isfinite(float(duration)) or duration <= 0:
+        raise HTTPException(status_code=422, detail="duration_seconds must be a positive finite number")
+    options = operator_profiles()[group].get("duration_options", [])
+    if options and float(duration) not in {float(option) for option in options}:
+        raise HTTPException(status_code=422, detail={"reason": "Choose a configured duration.",
+            "duration_options": options})
+    return float(duration)
+
+
+def _capture_actual_profile_states() -> Dict[str, Dict[str, Any]]:
+    """Read verified prior operator states from both live SUMO contexts."""
+    readbacks = {"classical": controller.operator_readback,
+                 "quantum": quantum_controller.operator_readback}
+    captured = {}
+    for profile_key, enabled_field, corridor_field in (
+            ("vip", "vip_enabled", "vip_corridor"),
+            ("construction", "construction_enabled", "construction_corridor")):
+        values = [side.get(profile_key) for side in readbacks.values()]
+        if any(not isinstance(value, dict) or value.get("verified") is not True for value in values):
+            raise HTTPException(status_code=503, detail={"code": "OPERATOR_STATE_UNAVAILABLE",
+                "message": f"Verified {profile_key} state is not available from both SUMO contexts."})
+        actual_pairs = [(bool(value.get("enabled")), value.get("corridor") if value.get("enabled") else None)
+                        for value in values]
+        if actual_pairs[0] != actual_pairs[1]:
+            raise HTTPException(status_code=409, detail={"code": "OPERATOR_STATE_DIVERGED",
+                "message": f"Classical and Quantum {profile_key} readbacks do not match."})
+        captured[profile_key] = {enabled_field: actual_pairs[0][0], corridor_field: actual_pairs[0][1]}
+    return captured
+
+
 @app.post("/api/traffic/configure")
 async def configure_traffic(request_body: Dict[str, Any]):
     scenario = request_body.get("scenario", simulation_pair.scenario_id or "normal_day")
@@ -402,16 +687,32 @@ async def configure_traffic(request_body: Dict[str, Any]):
         density = validate_density(request_body.get("density"), scenario)
     except ValueError as ex:
         raise HTTPException(status_code=422, detail=str(ex)) from ex
+    constraints = request_body.get("constraints") or copy.deepcopy(simulation_pair.settings.get("constraints", {}))
+    previous_constraints = _capture_actual_profile_states()
+    vip_duration = _duration_seconds(request_body, "vip") if constraints.get("vip_enabled") else None
+    construction_duration = _duration_seconds(request_body, "construction") if constraints.get("construction_enabled") else None
     result = await apply_scenario({"scenario": scenario, "density": density,
-                                    "constraints": request_body.get("constraints", simulation_pair.settings.get("constraints", {})),
+                                    "constraints": constraints,
                                     "signal_timings": simulation_pair.settings.get("signal_timings", {}),
                                     "route_modifications": simulation_pair.settings.get("route_modifications", {})})
+    if result.get("success"):
+        result["timers"] = {}
+        for key, enabled_field, corridor_field, duration in (
+                ("vip", "vip_enabled", "vip_corridor", vip_duration),
+                ("construction_profile", "construction_enabled", "construction_corridor", construction_duration)):
+            if constraints.get(enabled_field):
+                baseline_key = "vip" if key == "vip" else "construction"
+                original = operator_expiry.original_state(key) or copy.deepcopy(previous_constraints[baseline_key])
+                result["timers"][key] = operator_expiry.activate(key, duration, original)
+            else:
+                operator_expiry.cancel(key)
     record_event("traffic", "TRAFFIC_CONFIG_UPDATED" if result["success"] else "TRAFFIC_CONFIG_REJECTED", result)
     return {"success": result["success"], "operation": "traffic_configure",
             "outcome": "success" if result["success"] else "partial" if result.get("status") == "partial" else "rejected",
             "requested": {"scenario": scenario, "density": density},
             "applied": {"scenario": result["scenario_id"], "density": result["density"]},
             "readback": result["operator_readback"],
+            "timers": result.get("timers", operator_expiry.snapshot()),
             "reason": result.get("limitations") if not result["success"] else None,
             "timestamp": datetime.now(timezone.utc).isoformat(), "pair_id": result["pair_id"]}
 
@@ -421,7 +722,25 @@ async def configure_weather(request_body: Dict[str, Any]):
     weather = str(request_body.get("weather", "")).lower()
     if weather not in operator_profiles()["weather"]:
         raise HTTPException(status_code=422, detail=f"Unsupported configured weather profile: {weather}")
-    return await _apply_constraint_update({"weather": weather}, "WEATHER_UPDATED")
+    result = await _apply_constraint_update({"weather": weather}, "WEATHER_APPLIED")
+    if result.get("success"):
+        record_event("traffic", "WEATHER_APPLIED", result)
+    return result
+
+
+@app.post("/api/constraints/weather/reset")
+async def reset_weather():
+    profiles = operator_profiles()["weather"]
+    baseline = next((name for name, profile in profiles.items() if profile.get("baseline") is True), None)
+    if baseline is None:
+        baseline = next((name for name, profile in profiles.items() if profile.get("speed_factor") == 1.0), None)
+    if baseline is None:
+        raise HTTPException(status_code=409, detail="No baseline weather profile is configured")
+    result = await _apply_constraint_update({"weather": baseline}, "WEATHER_CLEARED")
+    if result.get("success"):
+        record_event("traffic", "WEATHER_CLEARED", {"baseline_profile": baseline,
+            "readback_verified": True})
+    return result
 
 
 @app.post("/api/constraints/vip")
@@ -432,8 +751,20 @@ async def configure_vip(request_body: Dict[str, Any]):
         raise HTTPException(status_code=422, detail="enabled must be a boolean")
     if enabled and corridor not in CORRIDOR_MAP:
         raise HTTPException(status_code=422, detail="Select a known configured VIP corridor")
-    return await _apply_constraint_update({"vip_enabled": enabled, "vip_corridor": corridor if enabled else None},
-                                          "VIP_UPDATED")
+    duration = _duration_seconds(request_body, "vip") if enabled else None
+    key = "vip"
+    prior = operator_expiry.original_state(key)
+    actual_before = _capture_actual_profile_states()["vip"]
+    patch = {"vip_enabled": enabled, "vip_corridor": corridor if enabled else None}
+    result = await _apply_constraint_update(patch, "VIP_UPDATED")
+    if result.get("success"):
+        if enabled:
+            original = prior or actual_before
+            timer = operator_expiry.activate(key, duration, original)
+            result["timer"] = timer
+        else:
+            operator_expiry.cancel(key)
+    return result
 
 
 @app.post("/api/constraints/construction")
@@ -444,26 +775,208 @@ async def configure_construction(request_body: Dict[str, Any]):
         raise HTTPException(status_code=422, detail="enabled must be a boolean")
     if enabled and corridor not in CORRIDOR_MAP:
         raise HTTPException(status_code=422, detail="Select a known configured construction corridor")
-    return await _apply_constraint_update({"construction_enabled": enabled,
-                                           "construction_corridor": corridor if enabled else None},
-                                          "CONSTRUCTION_UPDATED")
+    duration = _configured_duration(request_body.get("duration_seconds", request_body.get("construction_duration_seconds")),
+        operator_profiles()["construction"].get("duration_options", []),
+        operator_profiles()["construction"].get("default_duration_seconds")) if enabled else None
+    key = "construction_profile"
+    prior = operator_expiry.original_state(key)
+    actual_before = _capture_actual_profile_states()["construction"]
+    patch = {"construction_enabled": enabled,
+             "construction_corridor": corridor if enabled else None}
+    result = await _apply_constraint_update(patch, "CONSTRUCTION_UPDATED")
+    if result.get("success"):
+        if enabled:
+            original = prior or actual_before
+            result["timer"] = operator_expiry.activate(key, duration, original)
+        else:
+            operator_expiry.cancel(key)
+        record_event("traffic", "CONSTRUCTION_APPLIED" if enabled else "CONSTRUCTION_CLEARED",
+                     {"corridor": corridor if enabled else None, "mode": "profile",
+                      "timer": result.get("timer"), "readback_verified": True})
+    return result
 
 
 @app.get("/api/operator/capabilities")
 async def operator_capabilities():
     """Describe implemented operator controls without implying live support."""
+    signals = await asyncio.to_thread(_discover_signal_states)
+    route_discovery = await get_network_routes()
+    signal_limits = operator_profiles()["signal_timing"]
+    common_signal_states = {}
+    for tls in signals["classical"]:
+        twin = next((entry for entry in signals["quantum"] if entry["tls_id"] == tls["tls_id"]), None)
+        if not twin:
+            continue
+        states = []
+        for name, predicate in (("GREEN", lambda state: any(c in state for c in "gG") and not any(c in state for c in "yY")),
+                                ("RED", lambda state: bool(state) and all(c in "rR" for c in state))):
+            phases_c = [p for p in tls["phases"] if predicate(str(p.get("state", "")))]
+            phases_q = [p for p in twin["phases"] if predicate(str(p.get("state", "")))]
+            if phases_c and phases_q and phases_c[0]["phase"] == phases_q[0]["phase"]:
+                pc, pq = phases_c[0], phases_q[0]
+                fixed_c = pc.get("timing_supported") is not True
+                fixed_q = pq.get("timing_supported") is not True
+                c_low, c_high = ((pc["duration_s"], pc["duration_s"]) if fixed_c else
+                                 (pc["min_duration_s"], pc["max_duration_s"]))
+                q_low, q_high = ((pq["duration_s"], pq["duration_s"]) if fixed_q else
+                                 (pq["min_duration_s"], pq["max_duration_s"]))
+                common_low = max(c_low, q_low, float(signal_limits["minimum_duration_s"]))
+                common_high = min(c_high, q_high, float(signal_limits["maximum_duration_s"]))
+                if common_low <= common_high and (not fixed_c or not fixed_q or abs(pc["duration_s"] - pq["duration_s"]) <= 1e-6):
+                    states.append({"state": name, "phase": pc["phase"],
+                        "duration_s": min(common_high, max(common_low, pc["duration_s"])),
+                        "min_duration_s": common_low, "max_duration_s": common_high})
+        mapping = next((entry for entry in JUNCTION_MAP.values() if entry.sumo_tls_id == tls["tls_id"]), None)
+        common_signal_states[tls["tls_id"]] = {"display_name": mapping.description if mapping else "Signalized junction",
+            "current_phase": tls["current_phase"], "signal_state": tls["signal_state"],
+            "duration_s": tls["current_phase_duration_s"], "next_switch": tls["next_switch"],
+            "remaining_seconds": tls.get("seconds_to_switch"),
+            "states": states}
+    profiles = operator_profiles()
     return {
-        "construction_profile": {"status": "available", "mode": "speed_cost_profile"},
+        "corridors": [{**item, "corridor_id": item["id"]}
+                      for item in route_discovery.get("corridors", [])],
+        "route_operations": {**operator_profiles()["route_operations"],
+            "status": "available", "mode": "live_vehicle_reroute"},
+        "weather_profiles": profiles["weather"],
+        "signal_controls": common_signal_states,
+        "decision_variables": load_variable_definitions(),
+        "construction_profiles": {"speed_cost_profile": profiles["construction"],
+            "duration_options": profiles["construction"].get("duration_options", []),
+            "supported_modes": profiles["construction"].get("supported_modes", [])},
+        "route_operation_timing": {"duration_options": profiles["route_operations"].get("duration_options", []),
+            "default_duration_seconds": profiles["route_operations"].get("default_duration_seconds")},
+        "construction_profile": {"status": "available", "mode": "speed_cost_profile",
+                                  "default_duration_seconds": profiles["construction"]["default_duration_seconds"]},
         "construction_closure": {"status": "conditional",
+            "default_duration_seconds": operator_profiles()["construction"]["default_duration_seconds"],
             "message": "Live edge closure is accepted only when no active route or loaded future flow uses the edge."},
         "scheduled_flow_diversion": {"status": "unavailable",
             "message": "Loaded route-backed flows cannot be reassigned through the current runtime TraCI interface."},
-        "vip_corridor_preference": {"status": "available", "mode": "routing_cost_preference"},
+        "vip_corridor_preference": {"status": "available", "mode": "routing_cost_preference",
+                                     "default_duration_seconds": operator_profiles()["vip"]["default_duration_seconds"],
+                                     "duration_options": operator_profiles()["vip"].get("duration_options", [])},
         "vip_entity_assignment": {"status": "unavailable",
             "message": "No VIP vehicle type or VIP demand entity is defined in the loaded SUMO demand."},
-        "signal_timing": {"status": "conditional",
-            "message": "Only active TLS phases with mutable min/max bounds accept duration changes."},
+        "signal_timing": {"status": "dynamic",
+            "message": "Only RED/GREEN states discovered in the active programs are offered; fixed durations remain read-only."},
     }
+
+
+@app.post("/api/operator/route-operation")
+async def operator_route_operation(request_body: Dict[str, Any]):
+    source = request_body.get("source_corridor_id")
+    alternative = request_body.get("alternative_corridor_id")
+    share = request_body.get("diversion_share")
+    block = request_body.get("block_new_entry", False)
+    profile = operator_profiles()["route_operations"]
+    current_route_control = operator_expiry.public_record("route_operation")
+    if current_route_control and current_route_control.get("status") in {"ACTIVE", "RESTORATION_ERROR"}:
+        raise HTTPException(status_code=409, detail="A route control is already active. Clear it and verify restoration before applying another.")
+    lo, hi = profile["diversion_min"], profile["diversion_max"]
+    if source not in CORRIDOR_MAP or alternative not in CORRIDOR_MAP or source == alternative:
+        raise HTTPException(status_code=422, detail="Choose a discovered source and a different connected alternative corridor.")
+    if isinstance(block, bool) is False:
+        raise HTTPException(status_code=422, detail="Block new entry must be enabled or disabled.")
+    if isinstance(share, bool) or not isinstance(share, (int, float)) or not lo <= share <= hi:
+        raise HTTPException(status_code=422, detail=f"Diversion share must be between {lo:g}% and {hi:g}%.")
+    discovery = await get_network_routes()
+    discovered = {item["id"]: item for item in discovery.get("corridors", [])}
+    if source not in discovered or alternative not in discovered.get(source, {}).get("alternatives", []):
+        raise HTTPException(status_code=422, detail="That corridor pair is not connected in both live simulations.")
+    duration = _configured_duration(request_body.get("duration_seconds"),
+        profile.get("duration_options", []), profile.get("default_duration_seconds"))
+    snapshots = {"classical": controller.snapshot_route_operation(source, alternative),
+                 "quantum": quantum_controller.snapshot_route_operation(source, alternative)}
+    try:
+        result = await asyncio.to_thread(simulation_pair.apply_operator_route_operation,
+                                         source, alternative, float(share), block)
+    except Exception as ex:
+        message = str(ex)
+        rolled_back = "rolled back" in message.lower()
+        rollback_incomplete = "rollback errors: {" in message.lower()
+        event = "ROUTE_OPERATION_ROLLED_BACK" if rolled_back else "ROUTE_OPERATION_REJECTED"
+        record_event("system", event, {"request": request_body, "reason": message})
+        raise HTTPException(status_code=422, detail={"status": "PARTIAL" if rollback_incomplete else "ROLLED BACK" if rolled_back else "REJECTED",
+            "reason": message, "rollback_performed": rolled_back, "readback_verified": False,
+            "contexts": {}}) from ex
+    status_value = "APPLIED" if all(value["readback_verified"] for value in result.values()) else "PARTIAL"
+    payload = {"status": status_value, "source_corridor": source, "alternative_corridor": alternative,
+        "requested_diversion_share": float(share),
+        "eligible_vehicle_count": {side: value["eligible_vehicle_count"] for side, value in result.items()},
+        "rerouted_vehicle_count": {side: value["rerouted_vehicle_count"] for side, value in result.items()},
+        "actual_diversion_share": {side: value["actual_diversion_share"] for side, value in result.items()},
+        "destination_preserved": all(value["destination_preserved"] for value in result.values()),
+        "readback_verified": all(value["readback_verified"] for value in result.values()),
+        "rollback_performed": False, "contexts": result,
+        "timestamp": datetime.now(timezone.utc).isoformat()}
+    original = {"snapshots": snapshots, "source_corridor_id": source,
+                "alternative_corridor_id": alternative,
+                "requested_diversion_share": float(share), "block_new_entry": bool(block)}
+    payload["timer"] = operator_expiry.activate("route_operation", duration, original, {
+        "source_corridor_id": source, "alternative_corridor_id": alternative,
+        "requested_diversion_share": float(share), "block_new_entry": bool(block)})
+    record_event("traffic", "ROUTE_OPERATION_APPLIED", payload)
+    return payload
+
+
+def _configured_duration(value: Any, options: list[Any], default: Any) -> float:
+    available = [float(option) for option in options if isinstance(option, (int, float)) and not isinstance(option, bool) and float(option) > 0]
+    if not available:
+        raise HTTPException(status_code=409, detail="No route-operation durations are configured")
+    selected = float(default if value is None else value)
+    if selected not in available:
+        raise HTTPException(status_code=422, detail={"reason": "Select a configured operation duration.", "duration_options": available})
+    return selected
+
+
+def _restore_route_operation_snapshots(original: Dict[str, Any]) -> Dict[str, Any]:
+    return simulation_pair.restore_operator_route_operation(original)
+
+
+@app.post("/api/operator/route-operation/clear")
+async def clear_operator_route_operation():
+    original = operator_expiry.original_state("route_operation")
+    current = operator_expiry.public_record("route_operation")
+    if not original or not current:
+        return {"status": "INACTIVE", "readback_verified": True}
+    if current.get("status") in {"CLEARED", "EXPIRED"}:
+        return {"status": current["status"], "readback_verified": True}
+    result = await asyncio.to_thread(_restore_route_operation_snapshots, original)
+    if not result.get("readback_verified"):
+        record_event("system", "ROUTE_OPERATION_RESTORE_ERROR", result)
+        raise HTTPException(status_code=409, detail={"status": "RESTORE ERROR", **result})
+    operator_expiry.finish("route_operation", "CLEARED")
+    record_event("traffic", "ROUTE_OPERATION_CLEARED", {"readback_verified": True})
+    return {"status": "CLEARED", "readback_verified": True}
+
+
+@app.post("/api/operator/signal-timing")
+async def operator_signal_timing(request_body: Dict[str, Any]):
+    tls_id, phase, duration = request_body.get("tls_id"), request_body.get("phase"), request_body.get("duration")
+    signal_state = request_body.get("signal_state")
+    if not isinstance(tls_id, str) or not tls_id:
+        raise HTTPException(status_code=422, detail="Select a discovered junction.")
+    if signal_state is None and (isinstance(phase, bool) or not isinstance(phase, int)):
+        raise HTTPException(status_code=422, detail="Select a discovered signal phase.")
+    if signal_state is not None and str(signal_state).upper() not in {"RED", "GREEN"}:
+        raise HTTPException(status_code=422, detail="Choose a supported RED or GREEN signal state.")
+    if isinstance(duration, bool) or not isinstance(duration, (int, float)):
+        raise HTTPException(status_code=422, detail="Enter a valid signal duration in seconds.")
+    try:
+        result = await asyncio.to_thread(simulation_pair.apply_operator_signal_timing,
+                                         tls_id, phase, float(duration), signal_state)
+    except Exception as ex:
+        message = str(ex)
+        rolled_back = "rolled back" in message.lower()
+        rollback_incomplete = "rollback errors: {" in message.lower()
+        event = "SIGNAL_TIMING_ROLLED_BACK" if rolled_back else "SIGNAL_TIMING_REJECTED"
+        record_event("system", event, {"request": request_body, "reason": message})
+        raise HTTPException(status_code=422, detail={"status": "PARTIAL" if rollback_incomplete else "ROLLED BACK" if rolled_back else "REJECTED",
+            "tls_id": tls_id, "phase": phase, "requested_duration": duration,
+            "reason": message, "rollback_performed": rolled_back, "readback_verified": False}) from ex
+    record_event("traffic", "SIGNAL_TIMING_APPLIED", result)
+    return result
 
 
 @app.post("/api/operator/edge-closure")
@@ -498,12 +1011,17 @@ async def configure_construction_mode(request_body: Dict[str, Any]):
     mode = request_body.get("mode")
     if mode == "profile":
         return await configure_construction({"enabled": request_body.get("enabled"),
-                                             "corridor": request_body.get("corridor")})
+                                             "corridor": request_body.get("corridor"),
+                                             "duration_seconds": request_body.get("duration_seconds"),
+                                             "construction_duration_seconds": request_body.get("construction_duration_seconds")})
     if mode != "closure":
         raise HTTPException(status_code=422, detail={"success": False, "status": "rejected",
             "operation": "construction", "reason_code": "INVALID_MODE",
             "message": "mode must be 'profile' or 'closure'"})
     edges = request_body.get("edges")
+    if not edges and request_body.get("corridor") in CORRIDOR_MAP:
+        mapping = CORRIDOR_MAP[request_body["corridor"]]
+        edges = list(mapping.primary_sumo_edges + mapping.reverse_sumo_edges)
     if not isinstance(edges, list) or not edges:
         raise HTTPException(status_code=422, detail={"success": False, "status": "rejected",
             "operation": "construction_closure", "reason_code": "INVALID_EDGES",
@@ -513,6 +1031,13 @@ async def configure_construction_mode(request_body: Dict[str, Any]):
         raise HTTPException(status_code=422, detail={"success": False, "status": "rejected",
             "operation": "construction_closure", "reason_code": "INVALID_ENABLED_FLAG",
             "message": "enabled must be a boolean"})
+    duration = _configured_duration(request_body.get("duration_seconds"),
+        operator_profiles()["construction"].get("duration_options", []),
+        operator_profiles()["construction"].get("default_duration_seconds")) if enabled else None
+    timer_key = "construction_closure"
+    prior = operator_expiry.original_state(timer_key)
+    current_constraints = _capture_actual_profile_states()["construction"]
+    before_closed = set(controller.edge_closure_snapshots) | set(quantum_controller.edge_closure_snapshots)
     try:
         operation = simulation_pair.block_edges if enabled else simulation_pair.restore_edges
         result = await asyncio.to_thread(operation, edges)
@@ -521,10 +1046,52 @@ async def configure_construction_mode(request_body: Dict[str, Any]):
                   "reason_code": "LIVE_PREFLIGHT_FAILED",
                   "message": "Live SUMO preflight failed; no operation was reported as applied.", "mutations": 0}
     record_event("traffic" if result.get("success") else "system",
-                 "CONSTRUCTION_CLOSED" if result.get("success") else "CONSTRUCTION_CLOSURE_REJECTED", result)
+                 ("CONSTRUCTION_CLOSED" if enabled else "CONSTRUCTION_CLEARED")
+                 if result.get("success") else "CONSTRUCTION_CLOSURE_REJECTED", result)
     if not result.get("success"):
         raise HTTPException(status_code=409, detail=result)
+    if enabled:
+        newly_closed = [edge for edge in edges if edge not in before_closed]
+        original = copy.deepcopy(prior) if prior else {
+            "newly_closed_edges": [],
+            "constraints": {"construction_enabled": bool(current_constraints.get("construction_enabled", False)),
+                            "construction_corridor": current_constraints.get("construction_corridor")}}
+        original["newly_closed_edges"] = sorted(set(original.get("newly_closed_edges", [])) | set(newly_closed))
+        result["timer"] = operator_expiry.activate(timer_key, duration, original)
+    else:
+        remaining_edges = set((prior or {}).get("newly_closed_edges", [])) - set(edges)
+        remaining_seconds = operator_expiry.remaining_seconds(timer_key)
+        if remaining_edges and remaining_seconds:
+            updated_original = copy.deepcopy(prior)
+            updated_original["newly_closed_edges"] = sorted(remaining_edges)
+            result["timer"] = operator_expiry.activate(timer_key, remaining_seconds, updated_original)
+        else:
+            operator_expiry.cancel(timer_key)
+    if result.get("success") and enabled:
+        record_event("traffic", "CONSTRUCTION_APPLIED", {"mode": "closure", "edges": edges,
+            "timer": result.get("timer"), "readback_verified": True})
     return result
+
+
+@app.post("/api/operator/construction/clear")
+async def clear_operator_construction():
+    keys = ("construction_closure", "construction_profile")
+    key = next((candidate for candidate in keys
+                if operator_expiry.public_record(candidate)
+                and operator_expiry.public_record(candidate).get("status") in {"ACTIVE", "RESTORATION_ERROR"}), None)
+    if key is None:
+        current = _capture_actual_profile_states()["construction"]
+        if not current.get("construction_enabled", False):
+            return {"status": "INACTIVE", "readback_verified": True}
+        raise HTTPException(status_code=409, detail="No saved active construction operation is available to restore safely.")
+    original = operator_expiry.original_state(key)
+    try:
+        await _restore_expired_operator(key, original, expired=False)
+    except Exception as exc:
+        raise HTTPException(status_code=409, detail={"status": "RESTORE ERROR", "reason": str(exc),
+            "readback_verified": False}) from exc
+    operator_expiry.finish(key, "CLEARED")
+    return {"status": "CLEARED", "readback_verified": True}
 
 
 @app.post("/api/operator/vip/assign")
@@ -538,34 +1105,14 @@ async def assign_vip_entity(request_body: Dict[str, Any]):
 
 @app.post("/api/signals/configure")
 async def configure_signal(request_body: Dict[str, Any]):
-    tls_id, phase, duration = request_body.get("tls_id"), request_body.get("phase"), request_body.get("duration_s")
-    if not isinstance(tls_id, str) or not tls_id:
-        raise HTTPException(status_code=422, detail="tls_id is required")
-    try:
-        before = next((signal for signal in controller.network_signals() if signal["tls_id"] == tls_id), None)
-        if before is None:
-            raise ValueError(f"Unknown traffic-light ID: {tls_id}")
-        phase = int(phase) if isinstance(phase, int) and not isinstance(phase, bool) else phase
-        classical = await asyncio.to_thread(controller.set_signal_phase_duration, tls_id, phase, duration)
-        try:
-            quantum = await asyncio.to_thread(quantum_controller.set_signal_phase_duration, tls_id, phase, duration)
-        except Exception:
-            await asyncio.to_thread(controller.set_signal_phase_duration, tls_id, phase,
-                                     classical["before_duration_s"])
-            raise
-        applied = classical["verified"] and quantum["verified"]
-        record_event("traffic", "SIGNAL_UPDATED" if applied else "SIGNAL_REJECTED",
-                     {"requested": request_body, "classical": classical, "quantum": quantum})
-        return {"success": applied, "operation": "signal_configure", "requested": request_body,
-                "outcome": "success" if applied else "rejected",
-                "applied": applied, "readback": {"classical": classical, "quantum": quantum},
-                "reason": None if applied else "TraCI phase-duration readback mismatch",
-                "timestamp": datetime.now(timezone.utc).isoformat()}
-    except (ValueError, TypeError, RuntimeError) as ex:
-        record_event("system", "SIGNAL_UNSUPPORTED_OR_REJECTED", {"requested": request_body, "reason": str(ex)})
-        raise HTTPException(status_code=422, detail={"success": False, "operation": "signal_configure",
-                                                   "requested": request_body, "applied": False,
-                                                   "readback": None, "reason": str(ex)}) from ex
+    # Compatibility alias for existing dashboard clients; all writes use the
+    # paired preflight/readback/rollback transaction below.
+    result = await operator_signal_timing({"tls_id": request_body.get("tls_id"),
+        "phase": request_body.get("phase"), "duration": request_body.get("duration_s")})
+    result["success"] = result.get("status") == "APPLIED" and result.get("readback_verified", False)
+    result["operation"] = "signal_configure"
+    result["readback"] = result.get("contexts")
+    return result
 
 
 @app.post("/api/simulation/apply")
@@ -610,37 +1157,30 @@ async def apply_scenario(request_body: Dict[str, Any]):
             raise HTTPException(status_code=422, detail=f"Signal timing is outside allowed bounds for {junction}")
 
     routes = request_body.get("route_modifications") or {}
-    route_source = routes.get("source") or routes.get("block_corridor")
-    alternative = routes.get("alternative")
-    blocked = routes.get("blocked", False)
-    percent = routes.get("diversion_percent", 0)
     if routes:
-        if route_source not in CORRIDOR_MAP or (alternative and alternative not in CORRIDOR_MAP):
-            raise HTTPException(status_code=422, detail="Unknown source or alternative corridor")
-        if route_source == alternative:
-            raise HTTPException(status_code=422, detail="Source and alternative routes must differ")
-        if not isinstance(blocked, bool):
-            raise HTTPException(status_code=422, detail="blocked must be a boolean")
-        if isinstance(percent, bool) or not isinstance(percent, int) or not 0 <= percent <= 100:
-            raise HTTPException(status_code=422, detail="diversion_percent must be an integer from 0 to 100")
+        raise HTTPException(status_code=422,
+            detail="Live corridor changes must use the paired Route Operations control so both SUMO contexts can be read back and rolled back atomically.")
 
     shared_inputs = {"constraints": constraints, "signal_timings": signal_timings}
-    started = await asyncio.to_thread(simulation_pair.start, scenario, density, shared_inputs)
+    closure_timer = operator_expiry.public_record("construction_closure")
+    if closure_timer:
+        operator_expiry.cancel("construction_closure")
+        record_event("traffic", "CONSTRUCTION_CLOSURE_TIMER_CANCELED_BY_SIMULATION_RESTART",
+                     {"timer": closure_timer, "reason": "A new SUMO context clears transient edge permission snapshots."})
+    try:
+        started = await asyncio.to_thread(simulation_pair.start, scenario, density, shared_inputs)
+    except RouteValidationError as ex:
+        raise HTTPException(status_code=422, detail={"code": "ROUTE_INVALID", "errors": ex.report.get("errors", [])}) from ex
     if not started:
-        raise HTTPException(status_code=503, detail="One or both SUMO simulations failed to start")
+        raise HTTPException(status_code=503, detail={"code": "SUMO_START_FAILED",
+            "simulations": {name: {"code": context.last_error_code, "message": context.last_error}
+                            for name, context in (("classical", controller), ("quantum", quantum_controller))}})
     clear_current_optimization()
 
     simulation_pair.settings["route_modifications"] = routes
     controller.scenario_inputs["route_modifications"] = routes
     quantum_controller.scenario_inputs["route_modifications"] = routes
     route_result = None
-    if routes:
-        try:
-            route_result = await asyncio.to_thread(simulation_pair.apply_route_control,
-                                                    route_source, alternative, percent, blocked)
-        except Exception as ex:
-            raise HTTPException(status_code=422, detail=f"Route control could not be applied: {ex}") from ex
-        record_event("traffic", "Route controls applied to both simulations", route_result)
 
     readbacks = {"classical": controller.operator_readback, "quantum": quantum_controller.operator_readback}
     readback_ok = True
@@ -651,11 +1191,7 @@ async def apply_scenario(request_body: Dict[str, Any]):
                                                    for signal in item.values())
             else:
                 readback_ok = readback_ok and item.get("verified", False)
-    route_ok = (route_result is None or all(
-        result.get("readback_confirmed") and not result.get("errors") and not result.get("failed")
-        and (not result.get("blocked") or result.get("new_entries_blocked"))
-        and (not alternative or percent <= 0 or result.get("successful", 0) > 0)
-        for result in route_result.values()))
+    route_ok = route_result is None
     apply_status = "applied" if readback_ok and route_ok else "partial"
     signal_limitations = [
         {"junction": junction, "sumo_id": signal.get("sumo_id"),
@@ -676,47 +1212,14 @@ async def apply_scenario(request_body: Dict[str, Any]):
 
 @app.post("/api/simulation/routes")
 async def update_routes(request_body: Dict[str, Any]):
-    source = request_body.get("source")
-    alternative = request_body.get("alternative")
-    percent = request_body.get("diversion_percent", 0)
-    blocked = request_body.get("blocked", False)
-    if source not in CORRIDOR_MAP or (alternative and alternative not in CORRIDOR_MAP):
-        raise HTTPException(status_code=422, detail="Unknown source or alternative corridor")
-    if source == alternative:
-        raise HTTPException(status_code=422, detail="Source and alternative routes must differ")
-    if isinstance(percent, bool) or not isinstance(percent, int) or not 0 <= percent <= 100:
-        raise HTTPException(status_code=422, detail="diversion_percent must be an integer from 0 to 100")
-    if not isinstance(blocked, bool):
-        raise HTTPException(status_code=422, detail="blocked must be a boolean")
-    try:
-        result = await asyncio.to_thread(simulation_pair.apply_route_control, source, alternative, percent, blocked)
-    except Exception as ex:
-        event_type = "ROUTE_BLOCK_REJECTED" if blocked else "ROUTE_OPERATION_REJECTED"
-        record_event("system", event_type, {"requested": request_body, "applied": False, "reason": str(ex)})
-        raise HTTPException(status_code=422, detail={"success": False, "operation": event_type,
-            "requested": request_body, "applied": False, "readback": None, "reason": str(ex),
-            "timestamp": datetime.now(timezone.utc).isoformat()}) from ex
-    readbacks_ok = all(x.get("readback_confirmed") and
-                       (not x.get("blocked") or x.get("new_entries_blocked")) and
-                       (not alternative or percent <= 0 or x.get("successful", 0) > 0)
-                       for x in result.values())
-    any_errors = any(x.get("errors") or x.get("failed", 0) for x in result.values())
-    outcome = "applied" if readbacks_ok and not any_errors else "partial"
-    route_settings = {"source": source, "alternative": alternative,
-                      "diversion_percent": percent, "blocked": blocked}
-    operation = "ROUTE_BLOCKED" if blocked and outcome == "applied" else "ROUTE_BLOCK_REJECTED" if blocked else "ROUTE_REROUTED" if alternative else "ROUTE_RESTORED"
-    if outcome == "applied":
-        simulation_pair.settings["route_modifications"] = route_settings
-        controller.scenario_inputs["route_modifications"] = route_settings
-        quantum_controller.scenario_inputs["route_modifications"] = route_settings
-    record_event("traffic" if outcome == "applied" else "system", operation,
-                 {"requested": request_body, "result": result, "success": outcome == "applied"})
-    return {"status": outcome, "success": outcome == "applied", "operation": operation,
-            "outcome": "success" if outcome == "applied" else "partial",
-            "requested": request_body, "applied": outcome == "applied",
-            "readback": result, "result": result,
-            "reason": None if outcome == "applied" else "TraCI did not confirm every route change; rollback was attempted.",
-            "timestamp": datetime.now(timezone.utc).isoformat()}
+    result = await operator_route_operation({"source_corridor_id": request_body.get("source"),
+        "alternative_corridor_id": request_body.get("alternative"),
+        "diversion_share": request_body.get("diversion_percent", 0),
+        "block_new_entry": request_body.get("blocked", False)})
+    result["success"] = result.get("status") == "APPLIED" and result.get("readback_verified", False)
+    result["operation"] = "ROUTE_OPERATION_APPLIED"
+    result["readback"] = result.get("contexts")
+    return result
 
 
 @app.get("/api/operations/events")
@@ -724,7 +1227,7 @@ async def get_operation_events(limit: int = 100):
     return {"events": list(operation_events)[-max(1, min(limit, 500)):], "pair_id": simulation_pair.run_id}
 
 
-@app.post("/api/simulation/vehicles/{vehicle_id}/reroute")
+@app.post("/api/simulation/vehicles/{vehicle_id}/reroute", include_in_schema=False)
 async def reroute_active_vehicle(vehicle_id: str, request_body: Optional[Dict[str, Any]] = None):
     """Reroute the matching live vehicle in both simulations transactionally."""
     body = request_body or {}
@@ -748,18 +1251,65 @@ async def reroute_active_vehicle(vehicle_id: str, request_body: Optional[Dict[st
 @app.get("/api/system/status")
 async def get_system_status():
     def quantum_status():
+        service_url = job_manager.client.service_url.rstrip("/")
+        health_url = f"{service_url}/health"
         try:
-            with urllib.request.urlopen("http://127.0.0.1:8001/health", timeout=1.0) as response:
+            with urllib.request.urlopen(health_url, timeout=QUANTUM_HEALTH_TIMEOUT_SECONDS) as response:
                 payload = json.loads(response.read().decode("utf-8"))
-                return {"status": "CONNECTED" if response.status == 200 else "OFFLINE",
-                        "decision_variables": payload.get("decision_variables")}
+                healthy = (response.status == 200 and
+                           str(payload.get("status", "")).lower() in {"healthy", "ok", "online"})
+                return {"status": "ONLINE" if healthy else "ERROR",
+                        "url": health_url,
+                        "decision_variables": payload.get("decision_variables"),
+                        "detail": None if healthy else f"Health endpoint returned an unhealthy response: {payload}"}
+        except urllib.error.HTTPError as ex:
+            return {"status": "ERROR", "url": health_url, "decision_variables": None,
+                    "detail": f"Health endpoint returned HTTP {ex.code}"}
+        except (TimeoutError, asyncio.TimeoutError):
+            return {"status": "STARTING", "url": health_url, "decision_variables": None,
+                    "detail": "Quantum health check timed out"}
+        except urllib.error.URLError as ex:
+            reason = getattr(ex, "reason", ex)
+            if isinstance(reason, TimeoutError):
+                state = "STARTING"
+            elif isinstance(reason, ConnectionRefusedError):
+                state = "OFFLINE"
+            else:
+                state = "ERROR"
+            return {"status": state, "url": health_url, "decision_variables": None,
+                    "detail": str(reason)}
         except Exception:
-            return {"status": "OFFLINE", "decision_variables": None}
+            return {"status": "ERROR", "url": health_url, "decision_variables": None,
+                    "detail": "Unexpected error while checking Quantum API health"}
     quantum = await asyncio.to_thread(quantum_status)
     repository = job_manager.repo
     pair_state = simulation_pair.lifecycle_state
     digital_twin_state = ("DEGRADED" if pair_state == "DEGRADED" else
                           "ERROR" if pair_state == "ERROR" else pair_state)
+    def simulation_status(context):
+        state = context.latest_state or {}
+        demand = state.get("demand", {})
+        return {
+            "lifecycle_state": context.lifecycle_state,
+            "simulation_time_s": state.get("time", context.sim_time),
+            "simulation_started_at": context.simulation_started_at,
+            "simulation_window": state.get("simulation_window"),
+            "active_vehicles": demand.get("active_vehicle_count", len(state.get("vehicles", []))),
+            "pending_vehicles": demand.get("pending_vehicle_count"),
+            "departed_vehicles": demand.get("departed_vehicle_count", context.departed_vehicle_count),
+            "arrived_vehicles": demand.get("arrived_vehicle_count", context.arrived_vehicle_count),
+            "loaded_vehicle_count": demand.get("loaded_vehicle_count", len(context.loaded_vehicle_ids)),
+            "loaded_vehicle_ids_sample": demand.get("loaded_vehicle_ids_sample",
+                                                     sorted(context.loaded_vehicle_ids)[:20]),
+            "active_pedestrians": demand.get("active_pedestrian_count",
+                                              len(state.get("pedestrians", []))),
+            "vehicle_demand_status": demand.get("vehicle_demand_status"),
+            "demand": demand,
+            "last_error": context.last_error,
+        }
+
+    fallback_module = Path(job_manager.client.quantum_module_dir)
+    fallback_available = (fallback_module / "optimization" / "classical_optimizer.py").is_file()
     return {
         "sumo_classical": "CONNECTED" if controller.running and controller.lifecycle_state != "ERROR" else
                           "ERROR" if controller.lifecycle_state == "ERROR" else "DISCONNECTED",
@@ -769,6 +1319,11 @@ async def get_system_status():
         "simulation_state": pair_state,
         "paused": pair_state == "PAUSED",
         "quantum_api": quantum,
+        "classical_fallback": "AVAILABLE" if fallback_available else "UNAVAILABLE",
+        "simulations": {
+            "classical": simulation_status(controller),
+            "quantum": simulation_status(quantum_controller),
+        },
         "supabase": repository.cloud_status,
         "pair_id": simulation_pair.run_id,
         "scenario_id": simulation_pair.scenario_id,
@@ -786,6 +1341,7 @@ async def get_simulation_state():
 
 @app.post("/api/integration/trigger_optimization")
 async def trigger_optimization(request_body: Optional[Dict[str, Any]] = None):
+    global latest_explainability
     """
     Triggers a scenario-aware Quantum Optimization run, records the lifecycle
     in Supabase, and applies the resulting decisions directly into SUMO TraCI.
@@ -869,6 +1425,10 @@ async def trigger_optimization(request_body: Optional[Dict[str, Any]] = None):
 
     quantum_after = await asyncio.to_thread(quantum_controller.capture_current_state)
     classical_after = await asyncio.to_thread(controller.capture_current_state)
+    plan_data = response.dict()
+    checks = await asyncio.to_thread(_explainability_checks, plan_data)
+    latest_explainability = _json_safe(explain_plan(plan_data, classical_after, quantum_after,
+                                                    load_variable_definitions(), checks))
     def state_summary(state):
         if not state:
             return None
@@ -908,6 +1468,14 @@ async def trigger_optimization(request_body: Optional[Dict[str, Any]] = None):
                   "applied_to_sumo": response.applied_to_sumo,
                   "routes": len(response.corridors), "signals": len(response.signal_changes),
                   "restrictions": len(response.restrictions), "runtime_seconds": response.runtime_seconds})
+    recommendation_summary = "; ".join(
+        f"{item['corridor']}: {item['status']}" for item in latest_explainability["corridors"])
+    record_event("optimization", f"Advisory corridor analysis from {response.optimizer_used}: {recommendation_summary}",
+                 {"run_id": response.run_id, "optimizer_used": response.optimizer_used,
+                  "recommendations_are_advisory": True,
+                  "recommendations": [{"corridor": item["corridor"], "status": item["status"],
+                                       "decision": item["decision"]}
+                                      for item in latest_explainability["corridors"]]})
 
     return JSONResponse(content=response.dict())
 

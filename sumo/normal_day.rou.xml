@@ -23,7 +23,7 @@
 
     <route id="r_cross_nw_se" edges="E_NORTH_IN_W E_NORTH_1 E_CENTRAL_1 E_CENTRAL_2 E_SOUTH_2 E_SOUTH_OUT_E"/>
     <route id="r_cross_se_nw" edges="E_SOUTH_IN_W E_SOUTH_1 E_CENTRAL_2_rev E_CENTRAL_1_rev E_NORTH_2 E_NORTH_OUT_E"/>
-    <route id="r_stad_casual" edges="E_NORTH_IN_W E_NORTH_1 E_CENTRAL_1 E_STAD_ACC E_STAD_RING_SW E_STAD_RING_WS E_STAD_ACC_rev E_CENTRAL_2 E_SOUTH_2 E_SOUTH_OUT_E"/>
+    <route id="r_stad_casual" edges="E_NORTH_IN_W E_NORTH_1 E_CENTRAL_1 E_STAD_ACC E_STAD_RING_SW E_STAD_WEST_ACCESS_rev E_CENTRAL_2 E_SOUTH_2 E_SOUTH_OUT_E"/>
 
     <route id="r_bus_north_east" edges="E_NORTH_IN_W E_NORTH_1 E_NORTH_2 E_EAST_1 E_EAST_OUT_S"/>
     <route id="r_bus_circular" edges="E_WEST_IN_N E_WEST_1 E_SOUTH_1 E_SOUTH_2 E_EAST_1_rev E_NORTH_2_rev E_CENTRAL_1 E_CENTRAL_2 E_SOUTH_2 E_SOUTH_OUT_E"/>

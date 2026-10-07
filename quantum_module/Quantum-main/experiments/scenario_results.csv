@@ -1,0 +1,6 @@
+Scenario,Weather,VIP,Construction,CrowdSurge,GreedyObj,ClassicalObj,QuantumObj,GreedyTravel,ClassicalTravel,QuantumTravel,GreedyQueue,ClassicalQueue,QuantumQueue,GreedyRuntime,ClassicalRuntime,QuantumRuntime
+S1_Clear,Clear,False,False,False,-528.28,-601.68,-469.25,2.8,3.3,3.3,6,8,8,0.0155,2.2406,17.5341
+S2_Rain,Heavy Rain,False,False,False,-528.28,-601.68,-489.0,2.8,3.3,3.3,6,8,8,0.0155,2.4695,19.1931
+S3_VIP,Clear,True,False,False,-528.28,-601.68,-461.2,2.8,3.3,3.1,6,8,7,0.0155,3.2779,19.2831
+S4_Construction,Clear,False,True,False,-528.28,-601.68,-489.5,2.8,3.3,3.5,6,8,9,0.0155,2.3618,16.9258
+S5_Combined,Heavy Rain,True,True,True,-528.28,-601.68,-425.25,2.8,3.3,3.5,6,8,9,0.0155,2.4071,17.2212

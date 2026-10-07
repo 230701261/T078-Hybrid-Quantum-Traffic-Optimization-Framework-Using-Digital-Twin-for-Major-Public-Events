@@ -12,6 +12,10 @@ class ScenarioManager:
         self.current_scenario = "normal_day"
         self.crowd_counter = 0
         self.last_crowd_burst_time = 0
+        self.demand_end_time_s = 3600.0
+
+    def set_demand_end_time(self, end_time_s: float):
+        self.demand_end_time_s = max(0.0, float(end_time_s))
 
     def set_scenario(self, scenario_name: str):
         if scenario_name in ["normal_day", "event_day"]:
@@ -44,6 +48,12 @@ class ScenarioManager:
         Scenario-specific dynamic events.
         Triggers passenger arrivals when scheduled MRTS trains stop at the single Chepauk station.
         """
+        # Train passenger bursts are bounded by the configured SUMO demand
+        # window. Continuing to inject persons forever kept an otherwise
+        # completed vehicle simulation alive at ever-increasing sim times.
+        if sim_time >= self.demand_end_time_s:
+            return
+
         interval = TRAIN_INTERVAL_EVENT if self.current_scenario == "event_day" else TRAIN_INTERVAL_NORMAL
         
         if sim_time - self.last_crowd_burst_time >= interval:

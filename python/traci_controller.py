@@ -7,6 +7,7 @@ import tempfile
 import hashlib
 import json
 import copy
+from datetime import datetime, timezone
 import xml.etree.ElementTree as ET
 from pathlib import Path
 import traci
@@ -16,7 +17,7 @@ from .config import NORMAL_CFG, EVENT_CFG, SIM_STEP_LENGTH
 from .traffic_light_manager import TrafficLightManager
 from .scenario_manager import ScenarioManager
 from .metrics_collector import MetricsCollector
-from .scenario_inputs import make_route_variant, validate_density, operator_profiles
+from .scenario_inputs import RouteValidationError, make_route_variant, validate_density, operator_profiles
 from .integration.id_mapper import CORRIDOR_MAP, JUNCTION_MAP
 from .integration.constraint_engine import ConstraintEngine
 from .traci_session import TRACI_SESSION_LOCK
@@ -31,6 +32,7 @@ class TraCIController:
         self.paused = False
         self.lifecycle_state = "STOPPED"
         self.last_error: Optional[str] = None
+        self.last_error_code: Optional[str] = None
         self.speed_multiplier = 1.0
         self.current_scenario = "normal_day"
         self.sim_time = 0.0
@@ -58,6 +60,8 @@ class TraCIController:
         self.completed_trip_times: list[float] = []
         self.completed_waiting_times: list[float] = []
         self.departed_vehicle_count = 0
+        self.arrived_vehicle_count = 0
+        self.loaded_vehicle_ids: set[str] = set()
         self.departed_by_type: Dict[str, int] = {}
         self._last_rate_wall = time.monotonic()
         self._last_rate_sim = 0.0
@@ -69,6 +73,8 @@ class TraCIController:
         self.route_variant: Optional[Path] = None
         self.scenario_inputs: Dict[str, Any] = {}
         self.density = None
+        self.demand_summary: Dict[str, Any] = {}
+        self.simulation_started_at: Optional[str] = None
 
     @contextlib.contextmanager
     def traci_session(self):
@@ -80,6 +86,12 @@ class TraCIController:
     def start(self, scenario: str = "normal_day", density: Optional[Dict[str, int]] = None,
               inputs: Optional[Dict[str, Any]] = None):
         with self.start_lock:
+            # Parse, scale, and validate demand before stopping the existing
+            # worker or closing its TraCI session. Invalid input is a safe
+            # rejection, not a destructive restart attempt.
+            selected_density = validate_density(density, scenario)
+            next_route_variant = make_route_variant(scenario, selected_density)
+
             # Stop and join the previous worker before touching its route file or
             # starting a replacement; SUMO keeps the route file open on Windows.
             with self.lock:
@@ -92,6 +104,7 @@ class TraCIController:
                 self.current_scenario = scenario
                 self.lifecycle_state = "STARTING"
                 self.last_error = None
+                self.last_error_code = None
                 self.scenario_mgr.set_scenario(scenario)
                 self.metrics.reset()
                 self.paused = False
@@ -100,13 +113,14 @@ class TraCIController:
                 # process and must never be restored into a restarted one.
                 self.edge_closure_snapshots.clear()
                 self.blocked_corridors.clear()
-                selected_density = validate_density(density, scenario)
                 self.density = selected_density
                 self.departure_times.clear()
                 self.waiting_by_vehicle.clear()
                 self.completed_trip_times.clear()
                 self.completed_waiting_times.clear()
                 self.departed_vehicle_count = 0
+                self.arrived_vehicle_count = 0
+                self.loaded_vehicle_ids.clear()
                 self.departed_by_type = {}
                 self.sim_time = 0.0
                 self.latest_state = {}
@@ -120,11 +134,19 @@ class TraCIController:
                             pass
                         if self.route_variant:
                             self.route_variant.unlink(missing_ok=True)
-                            self.route_variant = None
-                        self.route_variant = make_route_variant(scenario, selected_density)
+                        self.route_variant = next_route_variant
                         self.route_origin_edges = self._route_flow_origin_edges(self.route_variant)
                         self.flow_route_edges = self._route_flow_edges(self.route_variant)
                         cfg_file = EVENT_CFG if scenario == "event_day" else NORMAL_CFG
+                        self.demand_summary = self._summarize_demand(self.route_variant, cfg_file)
+                        self.scenario_mgr.set_demand_end_time(self.demand_summary["simulation_end_s"])
+                        self.simulation_started_at = datetime.now(timezone.utc).isoformat()
+                        print(
+                            f"[Demand] {self.label}: {self.demand_summary['vehicle_demand_definitions']} vehicle demand definitions, "
+                            f"{self.demand_summary['flow_count']} flows, "
+                            f"~{self.demand_summary['estimated_vehicle_demand']} expected vehicles; "
+                            f"simulation window 0–{self.demand_summary['simulation_end_s']:.0f}s"
+                        )
                         sumo_cmd = [
                             "sumo", "-c", cfg_file,
                             "--route-files", str(self.route_variant),
@@ -140,10 +162,22 @@ class TraCIController:
                         self.running = True
                         self.lifecycle_state = "RUNNING"
                     except Exception as ex:
-                        print(f"[TraCI Error] Failed to start SUMO ({self.label}): {ex}")
+                        route_failure = (isinstance(ex, RouteValidationError) or
+                                         "no valid route" in str(ex).lower() or
+                                         "no connection between edge" in str(ex).lower())
+                        code = "ROUTE_INVALID" if route_failure else "SUMO_START_FAILED"
+                        print(f"[{code}] Failed to start SUMO ({self.label}): {ex}")
+                        try:
+                            traci.switch(self.label)
+                            traci.close()
+                        except Exception:
+                            # Preserve the original startup failure; this only
+                            # releases a partially opened TraCI session.
+                            pass
                         self.running = False
                         self.lifecycle_state = "ERROR"
                         self.last_error = str(ex)
+                        self.last_error_code = code
                         if self.route_variant:
                             self.route_variant.unlink(missing_ok=True)
                             self.route_variant = None
@@ -220,6 +254,10 @@ class TraCIController:
                     traci.switch(self.label)
                     traci.simulationStep()
                     self.sim_time = float(traci.simulation.getTime())
+                    try:
+                        self.loaded_vehicle_ids.update(traci.simulation.getLoadedIDList())
+                    except Exception:
+                        pass
                     for vehicle_id in traci.simulation.getDepartedIDList():
                         self.departed_vehicle_count += 1
                         try:
@@ -231,7 +269,9 @@ class TraCIController:
                             self.departure_times[vehicle_id] = float(traci.vehicle.getDeparture(vehicle_id))
                         except Exception as ex:
                             print(f"[TraCI Departure Readback] vehicle={vehicle_id} error={ex}")
-                    for vehicle_id in traci.simulation.getArrivedIDList():
+                    arrived_ids = traci.simulation.getArrivedIDList()
+                    self.arrived_vehicle_count += len(arrived_ids)
+                    for vehicle_id in arrived_ids:
                         departure = self.departure_times.pop(vehicle_id, None)
                         if departure is not None:
                             self.completed_trip_times.append(max(0.0, self.sim_time - departure))
@@ -281,6 +321,10 @@ class TraCIController:
             for v_id in veh_ids:
                 try:
                     pos = traci.vehicle.getPosition(v_id)
+                    try:
+                        elevation = float(traci.vehicle.getPosition3D(v_id)[2])
+                    except Exception:
+                        elevation = 0.0
                     angle = traci.vehicle.getAngle(v_id)
                     speed = traci.vehicle.getSpeed(v_id)
                     v_type = traci.vehicle.getTypeID(v_id)
@@ -310,6 +354,7 @@ class TraCIController:
                         "vType": v_type,
                         "x": round(pos[0], 2),
                         "y": round(pos[1], 2),
+                        "z": round(elevation, 2),
                         "angle": round(angle, 1),
                         "speed": round(speed, 2),
                         "speed_kmh": round(speed * 3.6, 1),
@@ -359,6 +404,25 @@ class TraCIController:
                     continue
         except Exception:
             pass
+
+        active_pedestrian_count = len(pedestrians)
+        try:
+            pending_vehicle_ids = list(traci.simulation.getPendingVehicles())
+        except Exception:
+            pending_vehicle_ids = []
+        estimated_remaining = max(
+            0, int(round(self.demand_summary.get("estimated_vehicle_demand", 0)
+                         - self.departed_vehicle_count))
+        )
+        pending_vehicle_count = max(len(pending_vehicle_ids), estimated_remaining)
+        if vehicles:
+            vehicle_demand_status = "ACTIVE"
+        elif pending_vehicle_count:
+            vehicle_demand_status = "VEHICLES_PENDING"
+        elif sim_time >= self.demand_summary.get("vehicle_demand_end_s", float("inf")):
+            vehicle_demand_status = "SIMULATION_RUNNING_NO_ACTIVE_VEHICLES"
+        else:
+            vehicle_demand_status = "WAITING_FOR_DEPARTURES"
 
         # 3. Traffic Lights
         tls_states = self.traffic_lights.get_all_states()
@@ -438,6 +502,22 @@ class TraCIController:
             "configured_demand_per_hour": self.density,
             "generated_vehicles": self.departed_vehicle_count,
             "generated_vehicles_by_mode": dict(self.departed_by_type),
+            "simulation_started_at": self.simulation_started_at,
+            "simulation_window": {"start_s": 0.0,
+                                  "end_s": self.demand_summary.get("simulation_end_s")},
+            "demand": {
+                **self.demand_summary,
+                "loaded_vehicle_count": len(self.loaded_vehicle_ids),
+                "loaded_vehicle_ids_sample": sorted(self.loaded_vehicle_ids)[:20],
+                "active_vehicle_count": len(vehicles),
+                "departed_vehicle_count": self.departed_vehicle_count,
+                "arrived_vehicle_count": self.arrived_vehicle_count,
+                "pending_vehicle_count": pending_vehicle_count,
+                "pending_insertion_count": len(pending_vehicle_ids),
+                "expected_vehicles_remaining_estimate": estimated_remaining,
+                "active_pedestrian_count": active_pedestrian_count,
+                "vehicle_demand_status": vehicle_demand_status,
+            },
             "scenario_inputs": self.scenario_inputs,
             "event_phase": self.scenario_mgr.get_event_phase(sim_time),
             "paused": self.paused,
@@ -449,9 +529,64 @@ class TraCIController:
             "pedestrians": pedestrians,
             "traffic_lights": tls_states,
             "edges_congestion": edges_congestion,
+            # The renderer only marks a closure after the operator mutation
+            # verified its live lane-permission readback.
+            "closed_edges": sorted(self.edge_closure_snapshots),
             "bus_stops": bus_stops,
             "kpis": self.metrics.live_kpis,
             "chart_data": self.metrics.get_chart_data()
+        }
+
+    @staticmethod
+    def _summarize_demand(route_file: Path, config_file: str) -> Dict[str, Any]:
+        """Summarize configured demand without treating flow estimates as counts."""
+        route_root = ET.parse(route_file).getroot()
+        config_root = ET.parse(config_file).getroot()
+        end_node = config_root.find("./time/end")
+        configured_end = float(end_node.get("value", "3600")) if end_node is not None else 3600.0
+        routes = {node.get("id") for node in route_root.findall("route")}
+        vehicle_definitions = 0
+        flow_count = 0
+        vehicle_flow_count = 0
+        pedestrian_flow_count = 0
+        route_demand_count = 0
+        expected_vehicles = 0.0
+        vehicle_demand_end = 0.0
+        for node in route_root:
+            if node.tag == "vehicle":
+                vehicle_definitions += 1
+                route_demand_count += 1
+                expected_vehicles += 1.0
+                vehicle_demand_end = max(vehicle_demand_end, float(node.get("depart", "0")))
+            elif node.tag == "flow":
+                flow_count += 1
+                vehicle_flow_count += 1
+                route_demand_count += 1
+                begin = float(node.get("begin", "0"))
+                end = min(configured_end, float(node.get("end", str(configured_end))))
+                duration = max(0.0, end - begin)
+                vehicle_demand_end = max(vehicle_demand_end, end)
+                if node.get("number") is not None:
+                    expected_vehicles += float(node.get("number", "0"))
+                elif node.get("vehsPerHour") is not None:
+                    expected_vehicles += duration * float(node.get("vehsPerHour", "0")) / 3600.0
+                elif node.get("period") is not None and duration > 0:
+                    expected_vehicles += max(0, int((duration - 1e-9) // float(node.get("period", "1"))) + 1)
+                if node.get("route") and node.get("route") not in routes:
+                    raise ValueError(f"Demand flow {node.get('id')} references missing route {node.get('route')}")
+            elif node.tag == "personFlow":
+                flow_count += 1
+                pedestrian_flow_count += 1
+        return {
+            "route_count": len(routes),
+            "route_demand_count": route_demand_count,
+            "vehicle_demand_definitions": vehicle_definitions + vehicle_flow_count,
+            "vehicle_flow_count": vehicle_flow_count,
+            "pedestrian_flow_count": pedestrian_flow_count,
+            "flow_count": flow_count,
+            "estimated_vehicle_demand": int(round(expected_vehicles)),
+            "simulation_end_s": configured_end,
+            "vehicle_demand_end_s": vehicle_demand_end,
         }
 
     def capture_current_state(self) -> Dict[str, Any]:
@@ -822,10 +957,12 @@ class TraCIController:
                         state = str(phase.state)
                         classes = sorted({"green" if char in "gG" else "yellow" if char in "yY" else "red"
                                           for char in state})
+                        min_duration, max_duration = float(phase.minDur), float(phase.maxDur)
                         phases.append({"program_id": str(logic.programID), "phase": index,
                                        "duration_s": float(phase.duration), "state": state,
                                        "signal_classes": classes, "min_duration_s": float(phase.minDur),
-                                       "max_duration_s": float(phase.maxDur)})
+                                       "max_duration_s": float(phase.maxDur),
+                                       "timing_supported": min_duration > 0 and max_duration > min_duration})
                 try:
                     links = traci.trafficlight.getControlledLinks(tls_id)
                     controlled_links = [[{"incoming_lane": link[0], "outgoing_lane": link[1],
@@ -845,23 +982,29 @@ class TraCIController:
                                "supported_states": sorted({cls for phase in phases for cls in phase["signal_classes"]})})
             return output
 
-    def set_signal_phase_duration(self, tls_id: str, phase_index: int, duration: float) -> dict[str, Any]:
+    def set_signal_phase_duration(self, tls_id: str, phase_index: int, duration: float,
+                                  activate: bool = False,
+                                  requested_state: Optional[str] = None) -> dict[str, Any]:
         """Update one discovered phase duration transactionally and verify live logic."""
         with self.traci_session():
             ids = set(traci.trafficlight.getIDList())
             if tls_id not in ids:
                 raise ValueError(f"Unknown traffic-light ID: {tls_id}")
             validation = ConstraintEngine.validate_batch([{
-                "action_type": "signal_timing", "sumo_target_id": tls_id,
-                "parameters": {"phase": phase_index, "duration_s": duration},
+                "action_type": "signal_state" if activate else "signal_timing", "sumo_target_id": tls_id,
+                "parameters": {"phase": phase_index, "duration_s": duration,
+                               **({"state": requested_state} if activate else {})},
             }], {"tls_ids": ids})
             if not validation["valid"]:
                 reasons = "; ".join(error["message"] for error in validation["errors"])
                 raise ValueError(reasons)
             if isinstance(phase_index, bool) or not isinstance(phase_index, int) or phase_index < 0:
                 raise ValueError("phase must be a non-negative integer")
-            if isinstance(duration, bool) or not isinstance(duration, (int, float)) or not 1 <= duration <= 240:
-                raise ValueError("duration_s must be between 1 and 240")
+            timing_config = operator_profiles()["signal_timing"]
+            safe_min = float(timing_config["minimum_duration_s"])
+            safe_max = float(timing_config["maximum_duration_s"])
+            if isinstance(duration, bool) or not isinstance(duration, (int, float)) or not safe_min <= duration <= safe_max:
+                raise ValueError(f"Requested duration must be between {safe_min:g} and {safe_max:g} seconds")
             before = traci.trafficlight.getCompleteRedYellowGreenDefinition(tls_id)
             snapshots = [[float(p.duration) for p in logic.phases] for logic in before]
             active_logic_index = next((i for i, logic in enumerate(before)
@@ -871,20 +1014,26 @@ class TraCIController:
             logic = before[active_logic_index]
             phase = logic.phases[phase_index]
             min_duration, max_duration = float(phase.minDur), float(phase.maxDur)
-            if min_duration > 0 and max_duration > 0 and abs(max_duration - min_duration) <= 1e-6:
-                raise ValueError("The active TLS phase has fixed min/max timing and does not support operator duration changes")
-            if ((min_duration > 0 and duration < min_duration)
-                    or (max_duration > 0 and duration > max_duration)):
+            fixed = min_duration <= 0 or max_duration <= 0 or abs(max_duration - min_duration) <= 1e-6
+            if fixed and abs(float(duration) - float(phase.duration)) > 1e-6:
+                raise ValueError("Signal duration is fixed by the active SUMO program")
+            if duration < min_duration or duration > max_duration:
                 raise ValueError("duration_s is outside the active phase min/max bounds")
             previous = float(phase.duration)
             try:
                 phase.duration = float(duration)
                 traci.trafficlight.setCompleteRedYellowGreenDefinition(tls_id, logic)
+                if activate:
+                    traci.trafficlight.setPhase(tls_id, phase_index)
+                    traci.trafficlight.setPhaseDuration(tls_id, float(duration))
                 actual_logic = next((item for item in traci.trafficlight.getCompleteRedYellowGreenDefinition(tls_id)
                                      if str(item.programID) == str(traci.trafficlight.getProgram(tls_id))), None)
                 actual = float(actual_logic.phases[phase_index].duration) if actual_logic else None
                 if actual is None or abs(actual - float(duration)) > 1e-5:
                     raise RuntimeError("SUMO readback did not match requested phase duration")
+                if activate and (int(traci.trafficlight.getPhase(tls_id)) != phase_index
+                                 or abs(float(traci.trafficlight.getPhaseDuration(tls_id)) - float(duration)) > 1e-5):
+                    raise RuntimeError("SUMO did not activate and verify the requested signal phase")
             except Exception:
                 for old_logic, durations in zip(before, snapshots):
                     for old_phase, old_duration in zip(old_logic.phases, durations):
@@ -897,6 +1046,23 @@ class TraCIController:
                     "next_switch": float(traci.trafficlight.getNextSwitch(tls_id)),
                     "signal_state": traci.trafficlight.getRedYellowGreenState(tls_id),
                     "verified": True}
+
+    def restore_signal_snapshot(self, tls_id: str, changed_phase: int, prior_phase_duration: float,
+                                prior_active_phase: int, prior_active_duration: float) -> None:
+        """Compensating restore for a paired signal-state transaction."""
+        with self.traci_session():
+            current_program = str(traci.trafficlight.getProgram(tls_id))
+            logics = traci.trafficlight.getCompleteRedYellowGreenDefinition(tls_id)
+            logic = next((item for item in logics if str(item.programID) == current_program), None)
+            if logic is None or changed_phase >= len(logic.phases) or prior_active_phase >= len(logic.phases):
+                raise RuntimeError("Active signal program changed before rollback")
+            logic.phases[changed_phase].duration = float(prior_phase_duration)
+            traci.trafficlight.setCompleteRedYellowGreenDefinition(tls_id, logic)
+            traci.trafficlight.setPhase(tls_id, int(prior_active_phase))
+            traci.trafficlight.setPhaseDuration(tls_id, float(prior_active_duration))
+            if (int(traci.trafficlight.getPhase(tls_id)) != int(prior_active_phase)
+                    or abs(float(traci.trafficlight.getPhaseDuration(tls_id)) - float(prior_active_duration)) > 1e-5):
+                raise RuntimeError("SUMO did not verify the restored signal phase")
 
     def snapshot_route_operation(self, source: str, alternative: Optional[str] = None) -> dict[str, Any]:
         names = [source] + ([alternative] if alternative else [])
@@ -972,11 +1138,17 @@ class TraCIController:
                     traci.lane.setAllowed(lane_id, state["allowed"])
                     traci.lane.setDisallowed(lane_id, state["disallowed"])
                     traci.lane.setMaxSpeed(lane_id, state["speed"])
+                    if (list(traci.lane.getAllowed(lane_id)) != list(state["allowed"])
+                            or list(traci.lane.getDisallowed(lane_id)) != list(state["disallowed"])
+                            or abs(float(traci.lane.getMaxSpeed(lane_id)) - float(state["speed"])) > 1e-5):
+                        raise RuntimeError("lane-state readback mismatch")
                 except Exception as ex:
                     failures.append({"target": lane_id, "error": str(ex)})
             for edge_id, cost in snapshot.get("costs", {}).items():
                 try:
                     traci.edge.adaptTraveltime(edge_id, cost)
+                    if abs(float(traci.edge.getAdaptedTraveltime(edge_id, self.sim_time)) - float(cost)) > 1e-5:
+                        raise RuntimeError("adapted travel-time readback mismatch")
                 except Exception as ex:
                     failures.append({"target": edge_id, "error": str(ex)})
             for vehicle_id, route in snapshot.get("vehicles", {}).items():

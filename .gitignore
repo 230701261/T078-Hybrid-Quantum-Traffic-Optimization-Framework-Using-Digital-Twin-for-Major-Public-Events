@@ -11,5 +11,11 @@ __pycache__/
 # Frontend dependencies
 node_modules/
 
+# Local test mirror and generated Quantum runtime artifacts
+.acceptance-quantum-runtime/
+quantum_module/Quantum-main/results/
+quantum_module/Quantum-main/cache/
+quantum_module/Quantum-main/shared/*.json
+
 # Local Supabase CLI project metadata
 supabase/.temp/

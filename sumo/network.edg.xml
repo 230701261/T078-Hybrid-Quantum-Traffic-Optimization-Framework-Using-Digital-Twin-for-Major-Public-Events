@@ -49,6 +49,12 @@
     <edge id="E_STAD_RING_WS" from="N_STAD_WEST_GATE" to="N_STAD_SOUTH_GATE" type="stadium_access"/>
     <edge id="E_STAD_RING_SE" from="N_STAD_SOUTH_GATE" to="N_STAD_EAST_GATE" type="stadium_access"/>
     <edge id="E_STAD_RING_ES" from="N_STAD_EAST_GATE" to="N_STAD_SOUTH_GATE" type="stadium_access"/>
+    <!-- Direct western stadium approach: modeled in SUMO so routing and live
+         traffic use the same access shown by the digital-twin renderer. -->
+    <edge id="E_STAD_WEST_ACCESS" from="J_CENTRAL_STAD" to="N_STAD_WEST_GATE" type="stadium_access"
+          shape="340,380 360,382 377,392 386,410 390,430"/>
+    <edge id="E_STAD_WEST_ACCESS_rev" from="N_STAD_WEST_GATE" to="J_CENTRAL_STAD" type="stadium_access"
+          shape="390,430 386,410 377,392 360,382 340,380"/>
 
     <!-- ==================== CONTINUOUS ELEVATED RAILWAY VIADUCT (Z = 8.0m) ==================== -->
     <!-- Southbound Track -->

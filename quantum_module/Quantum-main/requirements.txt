@@ -1,0 +1,12 @@
+streamlit
+fastapi
+uvicorn
+pandas
+numpy
+plotly
+networkx
+ortools
+qiskit
+qiskit-optimization
+qiskit-aer
+pydantic

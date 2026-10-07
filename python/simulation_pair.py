@@ -9,12 +9,38 @@ import time
 from typing import Any, Optional
 
 from .traci_controller import TraCIController
-from .scenario_inputs import validate_density
+from .scenario_inputs import validate_density, validate_scenario_routes
 from .network_routing_service import NetworkRoutingService
 from .integration.constraint_engine import ConstraintEngine
 from .integration.schemas import DigitalTwinCommand
 import traci
 from .traci_session import TRACI_SESSION_LOCK
+
+
+def _diversion_target_count(eligible_count: int, requested_share: float) -> int:
+    """Round to the nearest realizable whole vehicle for the requested share."""
+    if eligible_count <= 0 or requested_share <= 0:
+        return 0
+    return min(eligible_count, int(eligible_count * requested_share / 100.0 + 0.5))
+
+
+def _route_position_is_reroutable(route: tuple[str, ...], route_index: int,
+                                  current_edge: str) -> bool:
+    """SUMO route mutation is safe only when the vehicle is on its external route edge."""
+    return (bool(route) and 0 <= route_index < len(route) and bool(current_edge)
+            and not current_edge.startswith(":") and current_edge == route[route_index])
+
+
+def _ordered_edges_in_route(route: tuple[str, ...], waypoints: tuple[str, ...],
+                            start_index: int = 0) -> bool:
+    """Return whether required stop edges remain in route order."""
+    route_index = max(0, start_index)
+    for waypoint in waypoints:
+        try:
+            route_index = route.index(waypoint, route_index) + 1
+        except ValueError:
+            return False
+    return True
 
 
 class SimulationPair:
@@ -31,6 +57,7 @@ class SimulationPair:
               inputs: Optional[dict[str, Any]] = None) -> bool:
         shared_density = validate_density(density, scenario)
         shared_inputs = dict(inputs or {})
+        validate_scenario_routes(scenario)
         # Use the same SUMO RNG seed for the baseline and optimized run so their
         # initial conditions are reproducible and comparison noise is reduced.
         shared_inputs.setdefault("seed", secrets.randbelow(2_000_000_000) + 1)
@@ -44,7 +71,13 @@ class SimulationPair:
         first_started = self.classical.start(scenario, shared_density, shared_inputs)
         if not first_started:
             return False
-        second_started = self.quantum.start(scenario, shared_density, shared_inputs)
+        try:
+            second_started = self.quantum.start(scenario, shared_density, shared_inputs)
+        except Exception:
+            # Keep the pair transactional if the second demand preflight or
+            # TraCI startup fails after Classical has already started.
+            self.classical.close()
+            raise
         if not second_started:
             self.classical.close()
             return False
@@ -209,6 +242,396 @@ class SimulationPair:
             rollback_failures = {side: errors for side, errors in rollback.items() if errors}
             suffix = f"; rollback failures: {rollback_failures}" if rollback_failures else "; both SUMO sessions were restored"
             raise RuntimeError(f"Paired route operation rejected: {ex}{suffix}") from ex
+
+    def restore_operator_route_operation(self, original: dict[str, Any]) -> dict[str, Any]:
+        """Constraint-check, restore, and read back the saved paired corridor state."""
+        from .integration.id_mapper import CORRIDOR_MAP
+        source, alternative = original.get("source_corridor_id"), original.get("alternative_corridor_id")
+        if source not in CORRIDOR_MAP or alternative not in CORRIDOR_MAP:
+            raise ValueError("Saved route-control corridors are no longer available")
+        controllers = {"classical": self.classical, "quantum": self.quantum}
+        current = {side: controller.snapshot_route_operation(source, alternative)
+                   for side, controller in controllers.items()}
+        for side, active in controllers.items():
+            saved = original.get("snapshots", {}).get(side)
+            if not isinstance(saved, dict):
+                raise ValueError(f"Saved {side} route-control state is unavailable")
+            with active.traci_session():
+                context = active.optimizer_constraint_context()
+                valid_edges = set(traci.edge.getIDList())
+                route_service = NetworkRoutingService(active)
+                validated_routes: set[tuple[str, ...]] = set()
+                commands = [{"action_type": "route_diversion", "sumo_target_id": edge,
+                             "parameters": {"priority_multiplier": 1.0}}
+                            for edge in saved.get("costs", {})]
+                for lane_id, lane_state in saved.get("lanes", {}).items():
+                    try:
+                        edge_id = traci.lane.getEdgeID(lane_id)
+                        changed = (list(traci.lane.getAllowed(lane_id)) != list(lane_state["allowed"])
+                                   or list(traci.lane.getDisallowed(lane_id)) != list(lane_state["disallowed"]))
+                    except Exception as exc:
+                        raise ValueError(f"{side}: could not preflight saved lane permissions for {lane_id}") from exc
+                    if changed:
+                        commands.append({"action_type": "operator_edge_control", "sumo_target_id": edge_id,
+                            "parameters": {"blocked": bool(lane_state["disallowed"])}})
+                for vehicle_id, route in saved.get("vehicles", {}).items():
+                    if vehicle_id not in traci.vehicle.getIDList() or not route:
+                        continue
+                    edge = str(traci.vehicle.getRoadID(vehicle_id))
+                    if not edge or edge.startswith(":") or edge == route[-1]:
+                        continue
+                    vtype = traci.vehicle.getTypeID(vehicle_id)
+                    vclass = traci.vehicletype.getVehicleClass(vtype)
+                    candidate = tuple(getattr(traci.simulation.findRoute(edge, route[-1], vType=vtype), "edges", ()) or ())
+                    if not candidate or candidate[0] != edge or candidate[-1] != route[-1]:
+                        raise ValueError(f"{side}: saved destination for vehicle {vehicle_id} is no longer reachable")
+                    commands.append({"action_type": "vehicle_reroute", "sumo_target_id": vehicle_id,
+                        "parameters": {"vehicle_id": vehicle_id, "route": candidate,
+                                       "source_edge": edge, "destination_edge": route[-1]}})
+                    if not route_service.validate_route(candidate, vclass, context.get("blocked_edges", ())).get("valid"):
+                        raise ValueError(f"{side}: safe restoration route for vehicle {vehicle_id} failed live validation")
+                    validated_routes.add(candidate)
+                context["route_validator"] = lambda route: tuple(route) in validated_routes
+                context.update({"edge_ids": valid_edges, "tls_ids": set(traci.trafficlight.getIDList()),
+                                "vehicle_ids": set(traci.vehicle.getIDList())})
+                gate = ConstraintEngine.validate_batch(commands, context)
+                if not gate["valid"]:
+                    raise ValueError(f"{side} ConstraintEngine rejected route-control restoration: "
+                                     + "; ".join(error["message"] for error in gate["errors"]))
+        failures = {}
+        try:
+            for side, active in controllers.items():
+                errors = active.restore_route_operation(original["snapshots"][side])
+                if errors:
+                    failures[side] = errors
+            if failures:
+                raise RuntimeError(str(failures))
+            return {"readback_verified": True, "restored": True}
+        except Exception as exc:
+            rollback = {side: active.restore_route_operation(current[side])
+                        for side, active in controllers.items()}
+            raise RuntimeError(f"Route-control restore failed: {exc}; recovery rollback: {rollback}") from exc
+
+    def apply_operator_route_operation(self, source: str, alternative: str,
+                                       diversion_share: float, block_new_entry: bool = False) -> dict[str, Any]:
+        """Plan, validate, apply and verify a live diversion atomically across both SUMO contexts."""
+        from .integration.id_mapper import CORRIDOR_MAP
+        from .scenario_inputs import operator_profiles
+        if source not in CORRIDOR_MAP or alternative not in CORRIDOR_MAP or source == alternative:
+            raise ValueError("Choose two different discovered corridors")
+        settings = operator_profiles()["route_operations"]
+        minimum, maximum, step = (float(settings[key]) for key in
+                                  ("diversion_min", "diversion_max", "diversion_step"))
+        if isinstance(diversion_share, bool) or not isinstance(diversion_share, (int, float)) or not minimum <= float(diversion_share) <= maximum:
+            raise ValueError(f"Diversion share must be between {minimum:g}% and {maximum:g}%")
+        if step > 0 and abs((float(diversion_share) - minimum) / step - round((float(diversion_share) - minimum) / step)) > 1e-7:
+            raise ValueError(f"Diversion share must use configured {step:g}% steps")
+        share = float(diversion_share)
+        source_edges = set(CORRIDOR_MAP[source].primary_sumo_edges + CORRIDOR_MAP[source].reverse_sumo_edges)
+        alternative_edges = set(CORRIDOR_MAP[alternative].primary_sumo_edges + CORRIDOR_MAP[alternative].reverse_sumo_edges)
+        classes = set(settings["eligible_vehicle_classes"])
+        controllers = {"classical": self.classical, "quantum": self.quantum}
+        plans: dict[str, list[dict[str, Any]]] = {}
+        eligible_counts: dict[str, int] = {}
+        flow_conflicts: dict[str, list[str]] = {}
+        lane_permissions: dict[str, dict[str, dict[str, list[str]]]] = {}
+        # Complete preflight and path planning in both contexts before any mutation.
+        for side, active_controller in controllers.items():
+            service = NetworkRoutingService(active_controller)
+            with active_controller.traci_session():
+                network_edges = set(traci.edge.getIDList())
+                if not source_edges.issubset(network_edges) or not alternative_edges.issubset(network_edges):
+                    raise ValueError(f"{side}: selected corridor is not fully present in the running SUMO network")
+                lane_permissions[side] = {}
+                for edge_id in source_edges:
+                    for lane_index in range(traci.edge.getLaneNumber(edge_id)):
+                        lane_id = f"{edge_id}_{lane_index}"
+                        lane_permissions[side][lane_id] = {"allowed": list(traci.lane.getAllowed(lane_id)),
+                                                           "disallowed": list(traci.lane.getDisallowed(lane_id))}
+                flow_conflicts[side] = sorted(source_edges & set(active_controller.flow_route_edges))
+                ids = list(traci.vehicle.getIDList())
+                eligible: list[dict[str, Any]] = []
+                for vehicle_id in ids:
+                    try:
+                        route = tuple(traci.vehicle.getRoute(vehicle_id))
+                        if not route:
+                            continue
+                        index = max(0, min(int(traci.vehicle.getRouteIndex(vehicle_id)), len(route) - 1))
+                        current = str(traci.vehicle.getRoadID(vehicle_id))
+                        # SUMO cannot change a vehicle's route while it is on an
+                        # internal junction edge; wait until it reaches a road.
+                        if not _route_position_is_reroutable(route, index, current) or current not in source_edges:
+                            continue
+                        vtype = traci.vehicle.getTypeID(vehicle_id)
+                        vclass = traci.vehicletype.getVehicleClass(vtype)
+                        if vclass not in classes:
+                            continue
+                        try:
+                            stop_edges = tuple(dict.fromkeys(
+                                traci.lane.getEdgeID(stop[0])
+                                for stop in traci.vehicle.getNextStops(vehicle_id)
+                                if stop and stop[0]
+                            ))
+                        except Exception:
+                            # If a vehicle has stops but the itinerary cannot be inspected,
+                            # keep it out of an operation whose safety cannot be verified.
+                            if vclass == "bus":
+                                continue
+                            stop_edges = ()
+                        if any(edge in source_edges and edge != current for edge in stop_edges):
+                            continue
+                        destination = route[-1]
+                        remaining = len(route) - index - 1
+                        if remaining <= int(settings["near_destination_remaining_edges"]):
+                            continue
+                        eligible.append({"vehicle_id": vehicle_id, "current_edge": current,
+                                         "destination": destination, "vehicle_type": vtype,
+                                         "vehicle_class": vclass, "route": route,
+                                         "route_index": index, "stop_edges": stop_edges})
+                    except Exception:
+                        continue
+                context = active_controller.optimizer_constraint_context()
+                context.update({"edge_ids": network_edges, "tls_ids": set(traci.trafficlight.getIDList()),
+                                "vehicle_ids": set(ids)})
+                feasible = []
+                for item in eligible:
+                    candidate = ()
+                    # Route through an actual alternative edge while retaining
+                    # the ordered live stop itinerary (including bus stops).
+                    for waypoint in sorted(alternative_edges):
+                        for insertion in range(len(item["stop_edges"]) + 1):
+                            ordered_stops = (item["stop_edges"][:insertion] + (waypoint,)
+                                             + item["stop_edges"][insertion:])
+                            try:
+                                merged = service.get_route(item["current_edge"], item["destination"],
+                                                           item["vehicle_type"], ordered_stops)
+                            except Exception:
+                                continue
+                            if (merged and merged[0] == item["current_edge"]
+                                    and merged[-1] == item["destination"]
+                                    and set(merged) & alternative_edges
+                                    and not any(edge in source_edges for edge in merged[1:])):
+                                checked = service.validate_route(merged, item["vehicle_class"], context.get("blocked_edges", ()))
+                                if checked.get("valid"):
+                                    candidate = merged
+                                    break
+                        if candidate:
+                            break
+                    if not candidate:
+                        continue
+                    context["route_validator"] = lambda route, cls=item["vehicle_class"]: service.validate_route(
+                        route, cls, context.get("blocked_edges", ())).get("valid", False)
+                    gate = ConstraintEngine.validate_batch([{"action_type": "vehicle_reroute",
+                        "sumo_target_id": item["vehicle_id"], "parameters": {
+                            "vehicle_id": item["vehicle_id"], "route": candidate,
+                            "source_edge": item["current_edge"], "destination_edge": item["destination"]}}], context)
+                    if not gate["valid"]:
+                        continue
+                    feasible.append({**item, "new_route": tuple(candidate)})
+                eligible_counts[side] = len(feasible)
+                # Stable ordering ensures the requested approximate share is reproducible.
+                count = _diversion_target_count(len(feasible), share)
+                side_plans = feasible[:count]
+                if block_new_entry:
+                    # ConstraintEngine validates the complete proposed entry block after feasible diversions are known.
+                    selected_ids = {p["vehicle_id"] for p in side_plans}
+                    active_conflict_edges = set()
+                    for vehicle_id in ids:
+                        current_route = tuple(traci.vehicle.getRoute(vehicle_id))
+                        index = max(0, int(traci.vehicle.getRouteIndex(vehicle_id)))
+                        if vehicle_id not in selected_ids:
+                            active_conflict_edges.update(set(current_route[index + 1:]) & source_edges)
+                    commands = [{"action_type": "operator_entry_block", "sumo_target_id": edge_id,
+                        "parameters": {"blocked": True,
+                            "scheduled_flow_conflict": edge_id in set(flow_conflicts[side]),
+                            "active_route_conflict": edge_id in active_conflict_edges}}
+                        for edge_id in source_edges]
+                    block_gate = ConstraintEngine.validate_batch(commands, context)
+                    if not block_gate["valid"]:
+                        reasons = "; ".join(error["message"] for error in block_gate["errors"])
+                        raise ValueError(f"New-entry block rejected in {side}: {reasons}")
+                plans[side] = side_plans
+                if not feasible and not block_new_entry:
+                    # A zero-eligible operation is reported explicitly by the API without mutating SUMO.
+                    pass
+        if not any(eligible_counts.values()) and not block_new_entry:
+            raise ValueError("No eligible active vehicles have a safe route through the selected alternative corridor.")
+        snapshots = {side: [(item["vehicle_id"], item["route"], item["route_index"]) for item in items]
+                     for side, items in plans.items()}
+        applied: dict[str, list[str]] = {side: [] for side in controllers}
+        try:
+            # Freeze both TraCI sessions across final preflight and mutation so
+            # a simulation step cannot move a planned vehicle into a junction.
+            with TRACI_SESSION_LOCK:
+                for side, active_controller in controllers.items():
+                    with active_controller.traci_session():
+                        live_ids = set(traci.vehicle.getIDList())
+                        for plan in plans[side]:
+                            vehicle_id = plan["vehicle_id"]
+                            if vehicle_id not in live_ids:
+                                raise RuntimeError(f"Vehicle {vehicle_id} is no longer active")
+                            live_route = tuple(traci.vehicle.getRoute(vehicle_id))
+                            live_edge = str(traci.vehicle.getRoadID(vehicle_id))
+                            if (live_route != plan["route"] or not live_route
+                                    or live_route[-1] != plan["destination"]
+                                    or live_edge.startswith(":") or live_edge != plan["current_edge"]):
+                                raise RuntimeError(f"Vehicle {vehicle_id} moved or changed route before the paired operation; retry after it leaves the junction")
+                for side, active_controller in controllers.items():
+                    with active_controller.traci_session():
+                        for plan in plans[side]:
+                            vehicle_id = plan["vehicle_id"]
+                            if vehicle_id not in set(traci.vehicle.getIDList()):
+                                raise RuntimeError(f"Vehicle {vehicle_id} is no longer active")
+                            current_route = tuple(traci.vehicle.getRoute(vehicle_id))
+                            if current_route != plan["route"] or current_route[-1] != plan["destination"]:
+                                raise RuntimeError(f"Vehicle {vehicle_id} changed before route mutation")
+                            traci.vehicle.setRoute(vehicle_id, list(plan["new_route"]))
+                            actual = tuple(traci.vehicle.getRoute(vehicle_id))
+                            index = max(0, min(int(traci.vehicle.getRouteIndex(vehicle_id)), max(0, len(actual) - 1)))
+                            actual_edge = str(traci.vehicle.getRoadID(vehicle_id))
+                            live_valid = NetworkRoutingService(active_controller).validate_route(
+                                actual, plan["vehicle_class"]).get("valid", False)
+                            if (not actual or actual[-1] != plan["destination"] or not live_valid
+                                    or actual_edge.startswith(":") or actual[index] != actual_edge
+                                    or not (set(actual[index:]) & alternative_edges)
+                                    or any(edge in source_edges for edge in actual[index + 1:])
+                                    or not _ordered_edges_in_route(actual, plan["stop_edges"], index)):
+                                raise RuntimeError(f"SUMO route readback did not preserve the destination, alternative corridor, stop sequence, and connectivity for {vehicle_id}: got {list(actual)}")
+                            applied[side].append(vehicle_id)
+                        if block_new_entry:
+                            for edge_id in source_edges:
+                                for lane_index in range(traci.edge.getLaneNumber(edge_id)):
+                                    lane_id = f"{edge_id}_{lane_index}"
+                                    vehicle_classes = sorted({traci.vehicletype.getVehicleClass(vtype)
+                                        for vtype in traci.vehicletype.getIDList()} - {""})
+                                    traci.lane.setDisallowed(lane_id, vehicle_classes)
+                                    if not set(vehicle_classes).issubset(set(traci.lane.getDisallowed(lane_id))):
+                                        raise RuntimeError(f"SUMO did not verify the new-entry block on {lane_id}")
+            return {side: {"eligible_vehicle_count": eligible_counts[side],
+                           "rerouted_vehicle_count": len(applied[side]),
+                           "actual_diversion_share": (100.0 * len(applied[side]) / eligible_counts[side]) if eligible_counts[side] else 0.0,
+                           "vehicles": applied[side], "destination_preserved": True,
+                           "readback_verified": True, "block_new_entry": bool(block_new_entry),
+                           "flow_conflicts": flow_conflicts[side]} for side in controllers}
+        except Exception as exc:
+            rollback_errors = {}
+            for side, active_controller in controllers.items():
+                errors = []
+                with active_controller.traci_session():
+                    for vehicle_id, old_route, old_index in snapshots[side]:
+                        try:
+                            if vehicle_id in set(traci.vehicle.getIDList()) and tuple(traci.vehicle.getRoute(vehicle_id)) != old_route:
+                                current_edge = str(traci.vehicle.getRoadID(vehicle_id))
+                                candidates = [index for index in range(min(old_index, len(old_route)), len(old_route))
+                                              if old_route[index] == current_edge]
+                                restore_from = candidates[0] if candidates else None
+                                restore_route = old_route[restore_from:] if restore_from is not None else ()
+                                if not restore_route:
+                                    vtype = traci.vehicle.getTypeID(vehicle_id)
+                                    restore_route = tuple(traci.simulation.findRoute(
+                                        current_edge, old_route[-1], vType=vtype).edges)
+                                if not restore_route or restore_route[0] != current_edge:
+                                    raise RuntimeError("could not reconstruct the original route from the live edge")
+                                traci.vehicle.setRoute(vehicle_id, list(restore_route))
+                                if tuple(traci.vehicle.getRoute(vehicle_id))[-1:] != old_route[-1:]:
+                                    raise RuntimeError("destination readback mismatch")
+                        except Exception as rollback_error:
+                            errors.append({"vehicle_id": vehicle_id, "error": str(rollback_error)})
+                    if block_new_entry:
+                        for lane_id, permission in lane_permissions[side].items():
+                            try:
+                                traci.lane.setAllowed(lane_id, permission["allowed"])
+                                traci.lane.setDisallowed(lane_id, permission["disallowed"])
+                            except Exception as rollback_error:
+                                errors.append({"lane_id": lane_id, "error": str(rollback_error)})
+                if errors:
+                    rollback_errors[side] = errors
+            suffix = f"; rollback errors: {rollback_errors}" if rollback_errors else "; both contexts were restored"
+            raise RuntimeError(f"Route operation failed and was rolled back: {exc}{suffix}") from exc
+
+    def apply_operator_signal_timing(self, tls_id: str, phase: int | None, duration: float,
+                                     signal_state: str | None = None) -> dict[str, Any]:
+        """Resolve a human RED/GREEN request against live phase states, then mutate both contexts."""
+        controllers = {"classical": self.classical, "quantum": self.quantum}
+        before: dict[str, dict[str, Any]] = {}
+        for side, active_controller in controllers.items():
+            with active_controller.traci_session():
+                signals = active_controller.network_signals()
+                item = next((signal for signal in signals if signal["tls_id"] == tls_id), None)
+                if item is None:
+                    raise ValueError(f"Signal {tls_id} is not available in {side}")
+                resolved_phase = phase
+                if signal_state is not None:
+                    requested = str(signal_state).upper()
+                    if requested not in {"RED", "GREEN"}:
+                        raise ValueError("Signal state must be RED or GREEN")
+                    def supports(entry: dict[str, Any]) -> bool:
+                        state = str(entry.get("state", ""))
+                        if not state or any(char in state for char in "yY"):
+                            return False
+                        if requested == "GREEN":
+                            return any(char in state for char in "gG")
+                        return all(char in "rR" for char in state)
+                    phase_info = next((entry for entry in item["phases"] if supports(entry)), None)
+                    if phase_info is None:
+                        raise ValueError(f"{requested} signal state control is unsupported by the active program in {side}")
+                    resolved_phase = int(phase_info["phase"])
+                if not isinstance(resolved_phase, int) or isinstance(resolved_phase, bool):
+                    raise ValueError("Select a discovered supported signal state")
+                phase_info = next((entry for entry in item["phases"] if entry["phase"] == resolved_phase), None)
+                if phase_info is None:
+                    raise ValueError(f"Selected phase is not available in {side}")
+                context = active_controller.optimizer_constraint_context()
+                gate = ConstraintEngine.validate_batch([{"action_type": "signal_state" if signal_state is not None else "signal_timing",
+                    "sumo_target_id": tls_id, "parameters": {"phase": resolved_phase,
+                        "duration_s": duration, **({"state": str(signal_state).upper()} if signal_state is not None else {})}}], context)
+                if not gate["valid"]:
+                    raise ValueError("; ".join(error["message"] for error in gate["errors"]))
+                before[side] = {"duration": phase_info["duration_s"],
+                                "active_duration": item["current_phase_duration_s"],
+                                "phase": item["current_phase"],
+                                "target_phase": resolved_phase}
+        phases = {record["target_phase"] for record in before.values()}
+        if len(phases) != 1:
+            raise ValueError("Classical and Quantum do not expose the same supported signal state")
+        phase = phases.pop()
+        applied = []
+        signal_reads: dict[str, dict[str, Any]] = {}
+        try:
+            for side, active_controller in controllers.items():
+                result = active_controller.set_signal_phase_duration(tls_id, phase, duration,
+                    activate=signal_state is not None,
+                    requested_state=str(signal_state).upper() if signal_state is not None else None)
+                if not result.get("verified") or abs(float(result["actual_duration_s"]) - float(duration)) > 1e-5:
+                    raise RuntimeError(f"{side} signal timing readback did not match")
+                signal_reads[side] = result
+                applied.append(side)
+            def classify(raw: str) -> str:
+                return "TRANSITION" if any(char in raw for char in "yY") else "GREEN" if any(char in raw for char in "gG") else "RED"
+            actual_states = {side: classify(str(signal_reads[side].get("signal_state", ""))) for side in controllers}
+            if signal_state is not None and any(value != str(signal_state).upper() for value in actual_states.values()):
+                raise RuntimeError("SUMO signal-state readback did not match the requested RED/GREEN state")
+            return {"status": "APPLIED", "tls_id": tls_id, "phase": phase,
+                    "signal_state": str(signal_state).upper() if signal_state else None,
+                    "requested_duration_s": float(duration), "readback_verified": True,
+                    "actual_duration_s": float(duration),
+                    "current_state": {side: actual_states[side] for side in controllers},
+                    "next_switch": {side: signal_reads[side].get("next_switch") for side in controllers},
+                    "contexts": {side: {"previous_duration_s": before[side]["duration"],
+                        "actual_duration_s": float(duration), "current_phase": signal_reads[side].get("current_phase"),
+                        "signal_state": signal_reads[side].get("signal_state"),
+                        "next_switch": signal_reads[side].get("next_switch"), "readback_verified": True}
+                        for side in controllers}}
+        except Exception as exc:
+            rollback_errors = {}
+            for side, active_controller in controllers.items():
+                try:
+                    active_controller.restore_signal_snapshot(tls_id, phase,
+                        before[side]["duration"], before[side]["phase"], before[side]["active_duration"])
+                except Exception as rollback_error:
+                    rollback_errors[side] = str(rollback_error)
+            suffix = f"; rollback errors: {rollback_errors}" if rollback_errors else "; both contexts were restored"
+            raise RuntimeError(f"Signal timing failed and was rolled back: {exc}{suffix}") from exc
 
     def apply_edge_closure(self, edge_ids: list[str], closed: bool) -> dict[str, Any]:
         """Safely close/restore arbitrary live edges in both SUMO contexts.

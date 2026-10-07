@@ -1,0 +1,4502 @@
+{
+    "J1": {
+        "osm_id": 243065482,
+        "degree": 8,
+        "latitude": 13.0586859,
+        "longitude": 80.2757062
+    },
+    "J2": {
+        "osm_id": 243066056,
+        "degree": 8,
+        "latitude": 13.0527706,
+        "longitude": 80.2737522
+    },
+    "J3": {
+        "osm_id": 247690622,
+        "degree": 8,
+        "latitude": 13.0596841,
+        "longitude": 80.2693795
+    },
+    "J4": {
+        "osm_id": 247690631,
+        "degree": 8,
+        "latitude": 13.0609158,
+        "longitude": 80.274329
+    },
+    "J5": {
+        "osm_id": 247874843,
+        "degree": 8,
+        "latitude": 13.058902,
+        "longitude": 80.2741686
+    },
+    "J6": {
+        "osm_id": 247874918,
+        "degree": 8,
+        "latitude": 13.0608586,
+        "longitude": 80.2750418
+    },
+    "J7": {
+        "osm_id": 247875073,
+        "degree": 8,
+        "latitude": 13.0634059,
+        "longitude": 80.2757855
+    },
+    "J8": {
+        "osm_id": 247875104,
+        "degree": 8,
+        "latitude": 13.0625578,
+        "longitude": 80.2774114
+    },
+    "J9": {
+        "osm_id": 247875107,
+        "degree": 8,
+        "latitude": 13.0611134,
+        "longitude": 80.2766043
+    },
+    "J10": {
+        "osm_id": 247875108,
+        "degree": 8,
+        "latitude": 13.06108,
+        "longitude": 80.2769595
+    },
+    "J11": {
+        "osm_id": 247875115,
+        "degree": 8,
+        "latitude": 13.0597608,
+        "longitude": 80.2769826
+    },
+    "J12": {
+        "osm_id": 247875137,
+        "degree": 8,
+        "latitude": 13.0583649,
+        "longitude": 80.2766967
+    },
+    "J13": {
+        "osm_id": 247973371,
+        "degree": 8,
+        "latitude": 13.0545357,
+        "longitude": 80.2737975
+    },
+    "J14": {
+        "osm_id": 248468294,
+        "degree": 8,
+        "latitude": 13.0712796,
+        "longitude": 80.2710616
+    },
+    "J15": {
+        "osm_id": 259056887,
+        "degree": 8,
+        "latitude": 13.0655618,
+        "longitude": 80.2717099
+    },
+    "J16": {
+        "osm_id": 259056943,
+        "degree": 8,
+        "latitude": 13.0620689,
+        "longitude": 80.2732582
+    },
+    "J17": {
+        "osm_id": 259056952,
+        "degree": 8,
+        "latitude": 13.0623173,
+        "longitude": 80.2688263
+    },
+    "J18": {
+        "osm_id": 259056961,
+        "degree": 8,
+        "latitude": 13.0620429,
+        "longitude": 80.2691112
+    },
+    "J19": {
+        "osm_id": 259056963,
+        "degree": 8,
+        "latitude": 13.0619535,
+        "longitude": 80.2697617
+    },
+    "J20": {
+        "osm_id": 259056964,
+        "degree": 8,
+        "latitude": 13.0619073,
+        "longitude": 80.2701302
+    },
+    "J21": {
+        "osm_id": 259056998,
+        "degree": 8,
+        "latitude": 13.0551707,
+        "longitude": 80.2791229
+    },
+    "J22": {
+        "osm_id": 259057001,
+        "degree": 8,
+        "latitude": 13.0548022,
+        "longitude": 80.2803376
+    },
+    "J23": {
+        "osm_id": 259057021,
+        "degree": 8,
+        "latitude": 13.0668709,
+        "longitude": 80.2718424
+    },
+    "J24": {
+        "osm_id": 259057130,
+        "degree": 8,
+        "latitude": 13.0655016,
+        "longitude": 80.2723987
+    },
+    "J25": {
+        "osm_id": 259057173,
+        "degree": 8,
+        "latitude": 13.0653284,
+        "longitude": 80.2716952
+    },
+    "J26": {
+        "osm_id": 259057195,
+        "degree": 8,
+        "latitude": 13.0650038,
+        "longitude": 80.2716641
+    },
+    "J27": {
+        "osm_id": 259057222,
+        "degree": 8,
+        "latitude": 13.0639227,
+        "longitude": 80.2712124
+    },
+    "J28": {
+        "osm_id": 259057236,
+        "degree": 8,
+        "latitude": 13.0653487,
+        "longitude": 80.2711983
+    },
+    "J29": {
+        "osm_id": 259057240,
+        "degree": 8,
+        "latitude": 13.0655665,
+        "longitude": 80.2712269
+    },
+    "J30": {
+        "osm_id": 259057299,
+        "degree": 8,
+        "latitude": 13.0646266,
+        "longitude": 80.2716526
+    },
+    "J31": {
+        "osm_id": 259057361,
+        "degree": 8,
+        "latitude": 13.0643344,
+        "longitude": 80.2716321
+    },
+    "J32": {
+        "osm_id": 259057505,
+        "degree": 8,
+        "latitude": 13.0642857,
+        "longitude": 80.2770377
+    },
+    "J33": {
+        "osm_id": 259057633,
+        "degree": 8,
+        "latitude": 13.0627139,
+        "longitude": 80.2715107
+    },
+    "J34": {
+        "osm_id": 259057637,
+        "degree": 8,
+        "latitude": 13.0629405,
+        "longitude": 80.2698653
+    },
+    "J35": {
+        "osm_id": 259057703,
+        "degree": 8,
+        "latitude": 13.0632795,
+        "longitude": 80.2699483
+    },
+    "J36": {
+        "osm_id": 259057711,
+        "degree": 8,
+        "latitude": 13.063198,
+        "longitude": 80.2711764
+    },
+    "J37": {
+        "osm_id": 259057712,
+        "degree": 8,
+        "latitude": 13.0632011,
+        "longitude": 80.2715394
+    },
+    "J38": {
+        "osm_id": 259057715,
+        "degree": 8,
+        "latitude": 13.0635739,
+        "longitude": 80.2715598
+    },
+    "J39": {
+        "osm_id": 259057818,
+        "degree": 8,
+        "latitude": 13.0612926,
+        "longitude": 80.2690174
+    },
+    "J40": {
+        "osm_id": 259057838,
+        "degree": 8,
+        "latitude": 13.061271,
+        "longitude": 80.2694678
+    },
+    "J41": {
+        "osm_id": 259057840,
+        "degree": 8,
+        "latitude": 13.0602283,
+        "longitude": 80.2694099
+    },
+    "J42": {
+        "osm_id": 259057852,
+        "degree": 8,
+        "latitude": 13.0612837,
+        "longitude": 80.2704237
+    },
+    "J43": {
+        "osm_id": 259057858,
+        "degree": 8,
+        "latitude": 13.0603519,
+        "longitude": 80.2703892
+    },
+    "J44": {
+        "osm_id": 259057867,
+        "degree": 8,
+        "latitude": 13.0603217,
+        "longitude": 80.2688754
+    },
+    "J45": {
+        "osm_id": 259057879,
+        "degree": 8,
+        "latitude": 13.0575937,
+        "longitude": 80.2735808
+    },
+    "J46": {
+        "osm_id": 259057888,
+        "degree": 8,
+        "latitude": 13.058106,
+        "longitude": 80.2725295
+    },
+    "J47": {
+        "osm_id": 259057901,
+        "degree": 8,
+        "latitude": 13.0554263,
+        "longitude": 80.2720012
+    },
+    "J48": {
+        "osm_id": 259057904,
+        "degree": 8,
+        "latitude": 13.0567304,
+        "longitude": 80.2728482
+    },
+    "J49": {
+        "osm_id": 259057915,
+        "degree": 8,
+        "latitude": 13.0567727,
+        "longitude": 80.2721828
+    },
+    "J50": {
+        "osm_id": 259057921,
+        "degree": 8,
+        "latitude": 13.0545854,
+        "longitude": 80.2720988
+    },
+    "J51": {
+        "osm_id": 259057924,
+        "degree": 8,
+        "latitude": 13.0546004,
+        "longitude": 80.2717957
+    },
+    "J52": {
+        "osm_id": 259057933,
+        "degree": 8,
+        "latitude": 13.0546319,
+        "longitude": 80.2714211
+    },
+    "J53": {
+        "osm_id": 259057942,
+        "degree": 8,
+        "latitude": 13.0537983,
+        "longitude": 80.2723584
+    },
+    "J54": {
+        "osm_id": 259057958,
+        "degree": 8,
+        "latitude": 13.0537438,
+        "longitude": 80.2727444
+    },
+    "J55": {
+        "osm_id": 259057989,
+        "degree": 8,
+        "latitude": 13.0578781,
+        "longitude": 80.2749716
+    },
+    "J56": {
+        "osm_id": 259058154,
+        "degree": 8,
+        "latitude": 13.057174,
+        "longitude": 80.2778532
+    },
+    "J57": {
+        "osm_id": 259058157,
+        "degree": 8,
+        "latitude": 13.0568029,
+        "longitude": 80.2771909
+    },
+    "J58": {
+        "osm_id": 259058168,
+        "degree": 8,
+        "latitude": 13.0570919,
+        "longitude": 80.2783037
+    },
+    "J59": {
+        "osm_id": 259058169,
+        "degree": 8,
+        "latitude": 13.0570456,
+        "longitude": 80.2787777
+    },
+    "J60": {
+        "osm_id": 259058188,
+        "degree": 8,
+        "latitude": 13.0540496,
+        "longitude": 80.2788934
+    },
+    "J61": {
+        "osm_id": 259058417,
+        "degree": 8,
+        "latitude": 13.0533722,
+        "longitude": 80.2801339
+    },
+    "J62": {
+        "osm_id": 259058438,
+        "degree": 8,
+        "latitude": 13.0537748,
+        "longitude": 80.2757247
+    },
+    "J63": {
+        "osm_id": 259058450,
+        "degree": 8,
+        "latitude": 13.0566034,
+        "longitude": 80.2791223
+    },
+    "J64": {
+        "osm_id": 259502672,
+        "degree": 8,
+        "latitude": 13.0590396,
+        "longitude": 80.2709855
+    },
+    "J65": {
+        "osm_id": 259502731,
+        "degree": 8,
+        "latitude": 13.0576195,
+        "longitude": 80.2700716
+    },
+    "J66": {
+        "osm_id": 259502740,
+        "degree": 8,
+        "latitude": 13.0553549,
+        "longitude": 80.2693163
+    },
+    "J67": {
+        "osm_id": 259502743,
+        "degree": 8,
+        "latitude": 13.0552269,
+        "longitude": 80.2696988
+    },
+    "J68": {
+        "osm_id": 259502750,
+        "degree": 8,
+        "latitude": 13.0547911,
+        "longitude": 80.270532
+    },
+    "J69": {
+        "osm_id": 259502753,
+        "degree": 8,
+        "latitude": 13.053389,
+        "longitude": 80.2695153
+    },
+    "J70": {
+        "osm_id": 259502788,
+        "degree": 8,
+        "latitude": 13.0537516,
+        "longitude": 80.2703642
+    },
+    "J71": {
+        "osm_id": 259773508,
+        "degree": 8,
+        "latitude": 13.0525465,
+        "longitude": 80.2730452
+    },
+    "J72": {
+        "osm_id": 259773517,
+        "degree": 8,
+        "latitude": 13.0521092,
+        "longitude": 80.2717708
+    },
+    "J73": {
+        "osm_id": 321842231,
+        "degree": 8,
+        "latitude": 13.0532194,
+        "longitude": 80.2804872
+    },
+    "J74": {
+        "osm_id": 339988019,
+        "degree": 8,
+        "latitude": 13.0562725,
+        "longitude": 80.2801999
+    },
+    "J75": {
+        "osm_id": 605230088,
+        "degree": 8,
+        "latitude": 13.0632153,
+        "longitude": 80.2704888
+    },
+    "J76": {
+        "osm_id": 9983155437,
+        "degree": 8,
+        "latitude": 13.0692562,
+        "longitude": 80.2864859
+    },
+    "J77": {
+        "osm_id": 12213569419,
+        "degree": 8,
+        "latitude": 13.0583949,
+        "longitude": 80.2795655
+    },
+    "J78": {
+        "osm_id": 243065475,
+        "degree": 6,
+        "latitude": 13.0587785,
+        "longitude": 80.2701542
+    },
+    "J79": {
+        "osm_id": 243065478,
+        "degree": 6,
+        "latitude": 13.0591217,
+        "longitude": 80.2711587
+    },
+    "J80": {
+        "osm_id": 243065479,
+        "degree": 6,
+        "latitude": 13.0592669,
+        "longitude": 80.2714493
+    },
+    "J81": {
+        "osm_id": 243065483,
+        "degree": 6,
+        "latitude": 13.0585347,
+        "longitude": 80.2763519
+    },
+    "J82": {
+        "osm_id": 243066053,
+        "degree": 6,
+        "latitude": 13.0534451,
+        "longitude": 80.2689097
+    },
+    "J83": {
+        "osm_id": 243066054,
+        "degree": 6,
+        "latitude": 13.053249,
+        "longitude": 80.2712743
+    },
+    "J84": {
+        "osm_id": 243066055,
+        "degree": 6,
+        "latitude": 13.0530865,
+        "longitude": 80.2722303
+    },
+    "J85": {
+        "osm_id": 243066057,
+        "degree": 6,
+        "latitude": 13.0522258,
+        "longitude": 80.2754042
+    },
+    "J86": {
+        "osm_id": 247690621,
+        "degree": 6,
+        "latitude": 13.0593714,
+        "longitude": 80.2690443
+    },
+    "J87": {
+        "osm_id": 247690627,
+        "degree": 6,
+        "latitude": 13.0607255,
+        "longitude": 80.271555
+    },
+    "J88": {
+        "osm_id": 247690629,
+        "degree": 6,
+        "latitude": 13.0609265,
+        "longitude": 80.2733389
+    },
+    "J89": {
+        "osm_id": 247690630,
+        "degree": 6,
+        "latitude": 13.0609326,
+        "longitude": 80.2739662
+    },
+    "J90": {
+        "osm_id": 247691283,
+        "degree": 6,
+        "latitude": 13.0667625,
+        "longitude": 80.273684
+    },
+    "J91": {
+        "osm_id": 247691291,
+        "degree": 6,
+        "latitude": 13.0637859,
+        "longitude": 80.2781911
+    },
+    "J92": {
+        "osm_id": 247691292,
+        "degree": 6,
+        "latitude": 13.0625452,
+        "longitude": 80.277993
+    },
+    "J93": {
+        "osm_id": 247691293,
+        "degree": 6,
+        "latitude": 13.0610462,
+        "longitude": 80.2777484
+    },
+    "J94": {
+        "osm_id": 247691294,
+        "degree": 6,
+        "latitude": 13.0597274,
+        "longitude": 80.2775224
+    },
+    "J95": {
+        "osm_id": 247691295,
+        "degree": 6,
+        "latitude": 13.0581789,
+        "longitude": 80.2772677
+    },
+    "J96": {
+        "osm_id": 247874844,
+        "degree": 6,
+        "latitude": 13.0596347,
+        "longitude": 80.2742472
+    },
+    "J97": {
+        "osm_id": 247874860,
+        "degree": 6,
+        "latitude": 13.061587,
+        "longitude": 80.2743142
+    },
+    "J98": {
+        "osm_id": 247874863,
+        "degree": 6,
+        "latitude": 13.0624919,
+        "longitude": 80.2742136
+    },
+    "J99": {
+        "osm_id": 247874876,
+        "degree": 6,
+        "latitude": 13.0629999,
+        "longitude": 80.2741349
+    },
+    "J100": {
+        "osm_id": 247874884,
+        "degree": 6,
+        "latitude": 13.0641713,
+        "longitude": 80.2739412
+    },
+    "J101": {
+        "osm_id": 247874895,
+        "degree": 6,
+        "latitude": 13.0655045,
+        "longitude": 80.2737828
+    },
+    "J102": {
+        "osm_id": 247874930,
+        "degree": 6,
+        "latitude": 13.0608539,
+        "longitude": 80.275668
+    },
+    "J103": {
+        "osm_id": 247874950,
+        "degree": 6,
+        "latitude": 13.0597265,
+        "longitude": 80.275723
+    },
+    "J104": {
+        "osm_id": 247874976,
+        "degree": 6,
+        "latitude": 13.061098,
+        "longitude": 80.2756801
+    },
+    "J105": {
+        "osm_id": 247875013,
+        "degree": 6,
+        "latitude": 13.0629054,
+        "longitude": 80.2757238
+    },
+    "J106": {
+        "osm_id": 247875026,
+        "degree": 6,
+        "latitude": 13.0625448,
+        "longitude": 80.2757084
+    },
+    "J107": {
+        "osm_id": 247875053,
+        "degree": 6,
+        "latitude": 13.0632011,
+        "longitude": 80.2757534
+    },
+    "J108": {
+        "osm_id": 247875087,
+        "degree": 6,
+        "latitude": 13.063599,
+        "longitude": 80.2763572
+    },
+    "J109": {
+        "osm_id": 247875097,
+        "degree": 6,
+        "latitude": 13.0637724,
+        "longitude": 80.2774305
+    },
+    "J110": {
+        "osm_id": 247875103,
+        "degree": 6,
+        "latitude": 13.0625293,
+        "longitude": 80.2770031
+    },
+    "J111": {
+        "osm_id": 247875105,
+        "degree": 6,
+        "latitude": 13.0610558,
+        "longitude": 80.27737
+    },
+    "J112": {
+        "osm_id": 247875106,
+        "degree": 6,
+        "latitude": 13.0625094,
+        "longitude": 80.2762479
+    },
+    "J113": {
+        "osm_id": 247875109,
+        "degree": 6,
+        "latitude": 13.0631921,
+        "longitude": 80.2774202
+    },
+    "J114": {
+        "osm_id": 247875111,
+        "degree": 6,
+        "latitude": 13.0611135,
+        "longitude": 80.276198
+    },
+    "J115": {
+        "osm_id": 247875127,
+        "degree": 6,
+        "latitude": 13.0597463,
+        "longitude": 80.2763648
+    },
+    "J116": {
+        "osm_id": 247875139,
+        "degree": 6,
+        "latitude": 13.0559971,
+        "longitude": 80.2762184
+    },
+    "J117": {
+        "osm_id": 247875140,
+        "degree": 6,
+        "latitude": 13.0567162,
+        "longitude": 80.2763403
+    },
+    "J118": {
+        "osm_id": 247875314,
+        "degree": 6,
+        "latitude": 13.0597539,
+        "longitude": 80.2761824
+    },
+    "J119": {
+        "osm_id": 247875315,
+        "degree": 6,
+        "latitude": 13.0597551,
+        "longitude": 80.2766055
+    },
+    "J120": {
+        "osm_id": 247973367,
+        "degree": 6,
+        "latitude": 13.057674,
+        "longitude": 80.2740306
+    },
+    "J121": {
+        "osm_id": 247973369,
+        "degree": 6,
+        "latitude": 13.0562347,
+        "longitude": 80.2738884
+    },
+    "J122": {
+        "osm_id": 247973370,
+        "degree": 6,
+        "latitude": 13.0552944,
+        "longitude": 80.273806
+    },
+    "J123": {
+        "osm_id": 248467966,
+        "degree": 6,
+        "latitude": 13.0710694,
+        "longitude": 80.2704816
+    },
+    "J124": {
+        "osm_id": 248467968,
+        "degree": 6,
+        "latitude": 13.0715542,
+        "longitude": 80.2704933
+    },
+    "J125": {
+        "osm_id": 248467981,
+        "degree": 6,
+        "latitude": 13.0719582,
+        "longitude": 80.2704944
+    },
+    "J126": {
+        "osm_id": 248467983,
+        "degree": 6,
+        "latitude": 13.0728929,
+        "longitude": 80.2706803
+    },
+    "J127": {
+        "osm_id": 248467986,
+        "degree": 6,
+        "latitude": 13.0730994,
+        "longitude": 80.2696027
+    },
+    "J128": {
+        "osm_id": 248467993,
+        "degree": 6,
+        "latitude": 13.0732437,
+        "longitude": 80.2691181
+    },
+    "J129": {
+        "osm_id": 248468109,
+        "degree": 6,
+        "latitude": 13.0712262,
+        "longitude": 80.2690665
+    },
+    "J130": {
+        "osm_id": 248468211,
+        "degree": 6,
+        "latitude": 13.0711228,
+        "longitude": 80.2696641
+    },
+    "J131": {
+        "osm_id": 248468293,
+        "degree": 6,
+        "latitude": 13.0716194,
+        "longitude": 80.2696983
+    },
+    "J132": {
+        "osm_id": 248468295,
+        "degree": 6,
+        "latitude": 13.0713327,
+        "longitude": 80.2704994
+    },
+    "J133": {
+        "osm_id": 248468540,
+        "degree": 6,
+        "latitude": 13.072997,
+        "longitude": 80.2700426
+    },
+    "J134": {
+        "osm_id": 248468657,
+        "degree": 6,
+        "latitude": 13.0729316,
+        "longitude": 80.2704441
+    },
+    "J135": {
+        "osm_id": 248468703,
+        "degree": 6,
+        "latitude": 13.0715957,
+        "longitude": 80.2701329
+    },
+    "J136": {
+        "osm_id": 248468705,
+        "degree": 6,
+        "latitude": 13.0709961,
+        "longitude": 80.2710034
+    },
+    "J137": {
+        "osm_id": 248468724,
+        "degree": 6,
+        "latitude": 13.0728073,
+        "longitude": 80.2710813
+    },
+    "J138": {
+        "osm_id": 248468728,
+        "degree": 6,
+        "latitude": 13.0718888,
+        "longitude": 80.2712121
+    },
+    "J139": {
+        "osm_id": 248468761,
+        "degree": 6,
+        "latitude": 13.0719537,
+        "longitude": 80.2692633
+    },
+    "J140": {
+        "osm_id": 259056885,
+        "degree": 6,
+        "latitude": 13.0673679,
+        "longitude": 80.2718748
+    },
+    "J141": {
+        "osm_id": 259056892,
+        "degree": 6,
+        "latitude": 13.0638724,
+        "longitude": 80.2715726
+    },
+    "J142": {
+        "osm_id": 259056893,
+        "degree": 6,
+        "latitude": 13.0620335,
+        "longitude": 80.2714968
+    },
+    "J143": {
+        "osm_id": 259056924,
+        "degree": 6,
+        "latitude": 13.0619554,
+        "longitude": 80.2715021
+    },
+    "J144": {
+        "osm_id": 259056945,
+        "degree": 6,
+        "latitude": 13.0623157,
+        "longitude": 80.2739895
+    },
+    "J145": {
+        "osm_id": 259056946,
+        "degree": 6,
+        "latitude": 13.0615691,
+        "longitude": 80.2733433
+    },
+    "J146": {
+        "osm_id": 259056948,
+        "degree": 6,
+        "latitude": 13.0626897,
+        "longitude": 80.2731434
+    },
+    "J147": {
+        "osm_id": 259056966,
+        "degree": 6,
+        "latitude": 13.0619234,
+        "longitude": 80.2706554
+    },
+    "J148": {
+        "osm_id": 259056969,
+        "degree": 6,
+        "latitude": 13.0641053,
+        "longitude": 80.2691914
+    },
+    "J149": {
+        "osm_id": 259056976,
+        "degree": 6,
+        "latitude": 13.0617022,
+        "longitude": 80.2762889
+    },
+    "J150": {
+        "osm_id": 259056978,
+        "degree": 6,
+        "latitude": 13.0631981,
+        "longitude": 80.2764358
+    },
+    "J151": {
+        "osm_id": 259056986,
+        "degree": 6,
+        "latitude": 13.0562248,
+        "longitude": 80.2754279
+    },
+    "J152": {
+        "osm_id": 259056988,
+        "degree": 6,
+        "latitude": 13.0562427,
+        "longitude": 80.2747921
+    },
+    "J153": {
+        "osm_id": 259056990,
+        "degree": 6,
+        "latitude": 13.0561011,
+        "longitude": 80.2757726
+    },
+    "J154": {
+        "osm_id": 259056992,
+        "degree": 6,
+        "latitude": 13.0560686,
+        "longitude": 80.2758625
+    },
+    "J155": {
+        "osm_id": 259056993,
+        "degree": 6,
+        "latitude": 13.0556243,
+        "longitude": 80.2780042
+    },
+    "J156": {
+        "osm_id": 259056995,
+        "degree": 6,
+        "latitude": 13.0555381,
+        "longitude": 80.2780251
+    },
+    "J157": {
+        "osm_id": 259056996,
+        "degree": 6,
+        "latitude": 13.0553429,
+        "longitude": 80.2785613
+    },
+    "J158": {
+        "osm_id": 259057037,
+        "degree": 6,
+        "latitude": 13.0664461,
+        "longitude": 80.2717918
+    },
+    "J159": {
+        "osm_id": 259057052,
+        "degree": 6,
+        "latitude": 13.0665137,
+        "longitude": 80.2731463
+    },
+    "J160": {
+        "osm_id": 259057068,
+        "degree": 6,
+        "latitude": 13.066572,
+        "longitude": 80.2737087
+    },
+    "J161": {
+        "osm_id": 259057075,
+        "degree": 6,
+        "latitude": 13.066211,
+        "longitude": 80.2717774
+    },
+    "J162": {
+        "osm_id": 259057100,
+        "degree": 6,
+        "latitude": 13.0653016,
+        "longitude": 80.2719801
+    },
+    "J163": {
+        "osm_id": 259057107,
+        "degree": 6,
+        "latitude": 13.0661026,
+        "longitude": 80.2724186
+    },
+    "J164": {
+        "osm_id": 259057115,
+        "degree": 6,
+        "latitude": 13.0660764,
+        "longitude": 80.2731161
+    },
+    "J165": {
+        "osm_id": 259057187,
+        "degree": 6,
+        "latitude": 13.0649587,
+        "longitude": 80.2719081
+    },
+    "J166": {
+        "osm_id": 259057202,
+        "degree": 6,
+        "latitude": 13.0650311,
+        "longitude": 80.2712687
+    },
+    "J167": {
+        "osm_id": 259057209,
+        "degree": 6,
+        "latitude": 13.0658856,
+        "longitude": 80.2712544
+    },
+    "J168": {
+        "osm_id": 259057210,
+        "degree": 6,
+        "latitude": 13.0658947,
+        "longitude": 80.2717481
+    },
+    "J169": {
+        "osm_id": 259057212,
+        "degree": 6,
+        "latitude": 13.0661223,
+        "longitude": 80.2713055
+    },
+    "J170": {
+        "osm_id": 259057213,
+        "degree": 6,
+        "latitude": 13.0661143,
+        "longitude": 80.2717684
+    },
+    "J171": {
+        "osm_id": 259057214,
+        "degree": 6,
+        "latitude": 13.0658206,
+        "longitude": 80.2717444
+    },
+    "J172": {
+        "osm_id": 259057216,
+        "degree": 6,
+        "latitude": 13.0656998,
+        "longitude": 80.2724004
+    },
+    "J173": {
+        "osm_id": 259057223,
+        "degree": 6,
+        "latitude": 13.0627622,
+        "longitude": 80.2711386
+    },
+    "J174": {
+        "osm_id": 259057225,
+        "degree": 6,
+        "latitude": 13.0639412,
+        "longitude": 80.2710126
+    },
+    "J175": {
+        "osm_id": 259057232,
+        "degree": 6,
+        "latitude": 13.0650243,
+        "longitude": 80.2710772
+    },
+    "J176": {
+        "osm_id": 259057259,
+        "degree": 6,
+        "latitude": 13.0650497,
+        "longitude": 80.2707064
+    },
+    "J177": {
+        "osm_id": 259057278,
+        "degree": 6,
+        "latitude": 13.0639747,
+        "longitude": 80.2706104
+    },
+    "J178": {
+        "osm_id": 259057289,
+        "degree": 6,
+        "latitude": 13.0646604,
+        "longitude": 80.2712508
+    },
+    "J179": {
+        "osm_id": 259057319,
+        "degree": 6,
+        "latitude": 13.0645031,
+        "longitude": 80.2739217
+    },
+    "J180": {
+        "osm_id": 259057349,
+        "degree": 6,
+        "latitude": 13.0648498,
+        "longitude": 80.2738736
+    },
+    "J181": {
+        "osm_id": 259057354,
+        "degree": 6,
+        "latitude": 13.0643743,
+        "longitude": 80.2712444
+    },
+    "J182": {
+        "osm_id": 259057405,
+        "degree": 6,
+        "latitude": 13.0656867,
+        "longitude": 80.273769
+    },
+    "J183": {
+        "osm_id": 259057411,
+        "degree": 6,
+        "latitude": 13.0652108,
+        "longitude": 80.273815
+    },
+    "J184": {
+        "osm_id": 259057414,
+        "degree": 6,
+        "latitude": 13.0647892,
+        "longitude": 80.2738796
+    },
+    "J185": {
+        "osm_id": 259057427,
+        "degree": 6,
+        "latitude": 13.0643993,
+        "longitude": 80.273937
+    },
+    "J186": {
+        "osm_id": 259057440,
+        "degree": 6,
+        "latitude": 13.0643423,
+        "longitude": 80.2759859
+    },
+    "J187": {
+        "osm_id": 259057441,
+        "degree": 6,
+        "latitude": 13.0650777,
+        "longitude": 80.2760537
+    },
+    "J188": {
+        "osm_id": 259057443,
+        "degree": 6,
+        "latitude": 13.0644843,
+        "longitude": 80.2760074
+    },
+    "J189": {
+        "osm_id": 259057444,
+        "degree": 6,
+        "latitude": 13.0634172,
+        "longitude": 80.2740844
+    },
+    "J190": {
+        "osm_id": 259057453,
+        "degree": 6,
+        "latitude": 13.0640488,
+        "longitude": 80.2747544
+    },
+    "J191": {
+        "osm_id": 259057460,
+        "degree": 6,
+        "latitude": 13.0634012,
+        "longitude": 80.2747282
+    },
+    "J192": {
+        "osm_id": 259057475,
+        "degree": 6,
+        "latitude": 13.0636968,
+        "longitude": 80.2747461
+    },
+    "J193": {
+        "osm_id": 259057509,
+        "degree": 6,
+        "latitude": 13.0648142,
+        "longitude": 80.2771465
+    },
+    "J194": {
+        "osm_id": 259057515,
+        "degree": 6,
+        "latitude": 13.0645407,
+        "longitude": 80.2775508
+    },
+    "J195": {
+        "osm_id": 259057536,
+        "degree": 6,
+        "latitude": 13.0649527,
+        "longitude": 80.276495
+    },
+    "J196": {
+        "osm_id": 259057537,
+        "degree": 6,
+        "latitude": 13.0644534,
+        "longitude": 80.2763685
+    },
+    "J197": {
+        "osm_id": 259057556,
+        "degree": 6,
+        "latitude": 13.0642791,
+        "longitude": 80.2772039
+    },
+    "J198": {
+        "osm_id": 259057559,
+        "degree": 6,
+        "latitude": 13.0637697,
+        "longitude": 80.2772022
+    },
+    "J199": {
+        "osm_id": 259057560,
+        "degree": 6,
+        "latitude": 13.0637326,
+        "longitude": 80.2767966
+    },
+    "J200": {
+        "osm_id": 259057576,
+        "degree": 6,
+        "latitude": 13.0631909,
+        "longitude": 80.2741152
+    },
+    "J201": {
+        "osm_id": 259057579,
+        "degree": 6,
+        "latitude": 13.0631921,
+        "longitude": 80.2769954
+    },
+    "J202": {
+        "osm_id": 259057580,
+        "degree": 6,
+        "latitude": 13.0625276,
+        "longitude": 80.2769583
+    },
+    "J203": {
+        "osm_id": 259057611,
+        "degree": 6,
+        "latitude": 13.059824,
+        "longitude": 80.2714455
+    },
+    "J204": {
+        "osm_id": 259057612,
+        "degree": 6,
+        "latitude": 13.0597243,
+        "longitude": 80.273238
+    },
+    "J205": {
+        "osm_id": 259057619,
+        "degree": 6,
+        "latitude": 13.0593042,
+        "longitude": 80.2742048
+    },
+    "J206": {
+        "osm_id": 259057620,
+        "degree": 6,
+        "latitude": 13.0598067,
+        "longitude": 80.2720887
+    },
+    "J207": {
+        "osm_id": 259057634,
+        "degree": 6,
+        "latitude": 13.0627667,
+        "longitude": 80.2710453
+    },
+    "J208": {
+        "osm_id": 259057635,
+        "degree": 6,
+        "latitude": 13.0628199,
+        "longitude": 80.2706451
+    },
+    "J209": {
+        "osm_id": 259057636,
+        "degree": 6,
+        "latitude": 13.0628794,
+        "longitude": 80.2702168
+    },
+    "J210": {
+        "osm_id": 259057638,
+        "degree": 6,
+        "latitude": 13.0629676,
+        "longitude": 80.2695986
+    },
+    "J211": {
+        "osm_id": 259057639,
+        "degree": 6,
+        "latitude": 13.0629945,
+        "longitude": 80.2692843
+    },
+    "J212": {
+        "osm_id": 259057640,
+        "degree": 6,
+        "latitude": 13.0630311,
+        "longitude": 80.2689229
+    },
+    "J213": {
+        "osm_id": 259057641,
+        "degree": 6,
+        "latitude": 13.0638189,
+        "longitude": 80.2691657
+    },
+    "J214": {
+        "osm_id": 259057642,
+        "degree": 6,
+        "latitude": 13.0634423,
+        "longitude": 80.2690868
+    },
+    "J215": {
+        "osm_id": 259057648,
+        "degree": 6,
+        "latitude": 13.0625839,
+        "longitude": 80.2688578
+    },
+    "J216": {
+        "osm_id": 259057677,
+        "degree": 6,
+        "latitude": 13.0617935,
+        "longitude": 80.2687625
+    },
+    "J217": {
+        "osm_id": 259057678,
+        "degree": 6,
+        "latitude": 13.0617699,
+        "longitude": 80.2690664
+    },
+    "J218": {
+        "osm_id": 259057693,
+        "degree": 6,
+        "latitude": 13.0641437,
+        "longitude": 80.2688792
+    },
+    "J219": {
+        "osm_id": 259057694,
+        "degree": 6,
+        "latitude": 13.0631448,
+        "longitude": 80.2682719
+    },
+    "J220": {
+        "osm_id": 259057696,
+        "degree": 6,
+        "latitude": 13.0630908,
+        "longitude": 80.2686001
+    },
+    "J221": {
+        "osm_id": 259057713,
+        "degree": 6,
+        "latitude": 13.063202,
+        "longitude": 80.2720447
+    },
+    "J222": {
+        "osm_id": 259057714,
+        "degree": 6,
+        "latitude": 13.0635538,
+        "longitude": 80.2720437
+    },
+    "J223": {
+        "osm_id": 259057716,
+        "degree": 6,
+        "latitude": 13.0635775,
+        "longitude": 80.2711827
+    },
+    "J224": {
+        "osm_id": 259057717,
+        "degree": 6,
+        "latitude": 13.0635472,
+        "longitude": 80.2711886
+    },
+    "J225": {
+        "osm_id": 259057768,
+        "degree": 6,
+        "latitude": 13.0636331,
+        "longitude": 80.2705374
+    },
+    "J226": {
+        "osm_id": 259057769,
+        "degree": 6,
+        "latitude": 13.0637107,
+        "longitude": 80.2700441
+    },
+    "J227": {
+        "osm_id": 259057782,
+        "degree": 6,
+        "latitude": 13.061283,
+        "longitude": 80.2700789
+    },
+    "J228": {
+        "osm_id": 259057788,
+        "degree": 6,
+        "latitude": 13.0620012,
+        "longitude": 80.2694742
+    },
+    "J229": {
+        "osm_id": 259057832,
+        "degree": 6,
+        "latitude": 13.061985,
+        "longitude": 80.2695262
+    },
+    "J230": {
+        "osm_id": 259057841,
+        "degree": 6,
+        "latitude": 13.0625316,
+        "longitude": 80.2682073
+    },
+    "J231": {
+        "osm_id": 259057842,
+        "degree": 6,
+        "latitude": 13.0621476,
+        "longitude": 80.2681298
+    },
+    "J232": {
+        "osm_id": 259057853,
+        "degree": 6,
+        "latitude": 13.0613021,
+        "longitude": 80.2708407
+    },
+    "J233": {
+        "osm_id": 259057854,
+        "degree": 6,
+        "latitude": 13.0619334,
+        "longitude": 80.2708612
+    },
+    "J234": {
+        "osm_id": 259057856,
+        "degree": 6,
+        "latitude": 13.0604954,
+        "longitude": 80.2708634
+    },
+    "J235": {
+        "osm_id": 259057857,
+        "degree": 6,
+        "latitude": 13.0619129,
+        "longitude": 80.2704231
+    },
+    "J236": {
+        "osm_id": 259057859,
+        "degree": 6,
+        "latitude": 13.0612769,
+        "longitude": 80.2698138
+    },
+    "J237": {
+        "osm_id": 259057860,
+        "degree": 6,
+        "latitude": 13.0601665,
+        "longitude": 80.2698384
+    },
+    "J238": {
+        "osm_id": 259057861,
+        "degree": 6,
+        "latitude": 13.060757,
+        "longitude": 80.2698281
+    },
+    "J239": {
+        "osm_id": 259057862,
+        "degree": 6,
+        "latitude": 13.0607648,
+        "longitude": 80.2704059
+    },
+    "J240": {
+        "osm_id": 259057874,
+        "degree": 6,
+        "latitude": 13.0619357,
+        "longitude": 80.2709922
+    },
+    "J241": {
+        "osm_id": 259057875,
+        "degree": 6,
+        "latitude": 13.0592009,
+        "longitude": 80.2721895
+    },
+    "J242": {
+        "osm_id": 259057876,
+        "degree": 6,
+        "latitude": 13.0590565,
+        "longitude": 80.2732398
+    },
+    "J243": {
+        "osm_id": 259057878,
+        "degree": 6,
+        "latitude": 13.0575431,
+        "longitude": 80.2740223
+    },
+    "J244": {
+        "osm_id": 259057880,
+        "degree": 6,
+        "latitude": 13.0577243,
+        "longitude": 80.272262
+    },
+    "J245": {
+        "osm_id": 259057882,
+        "degree": 6,
+        "latitude": 13.0577572,
+        "longitude": 80.2719195
+    },
+    "J246": {
+        "osm_id": 259057886,
+        "degree": 6,
+        "latitude": 13.0581627,
+        "longitude": 80.2720614
+    },
+    "J247": {
+        "osm_id": 259057887,
+        "degree": 6,
+        "latitude": 13.0591305,
+        "longitude": 80.272662
+    },
+    "J248": {
+        "osm_id": 259057889,
+        "degree": 6,
+        "latitude": 13.0577049,
+        "longitude": 80.2725041
+    },
+    "J249": {
+        "osm_id": 259057890,
+        "degree": 6,
+        "latitude": 13.0589636,
+        "longitude": 80.2737855
+    },
+    "J250": {
+        "osm_id": 259057891,
+        "degree": 6,
+        "latitude": 13.0568087,
+        "longitude": 80.2735213
+    },
+    "J251": {
+        "osm_id": 259057893,
+        "degree": 6,
+        "latitude": 13.0567791,
+        "longitude": 80.2739347
+    },
+    "J252": {
+        "osm_id": 259057894,
+        "degree": 6,
+        "latitude": 13.0568408,
+        "longitude": 80.2732486
+    },
+    "J253": {
+        "osm_id": 259057895,
+        "degree": 6,
+        "latitude": 13.0576203,
+        "longitude": 80.2733386
+    },
+    "J254": {
+        "osm_id": 259057896,
+        "degree": 6,
+        "latitude": 13.0564452,
+        "longitude": 80.2732028
+    },
+    "J255": {
+        "osm_id": 259057897,
+        "degree": 6,
+        "latitude": 13.0560803,
+        "longitude": 80.2731697
+    },
+    "J256": {
+        "osm_id": 259057898,
+        "degree": 6,
+        "latitude": 13.0553455,
+        "longitude": 80.2730597
+    },
+    "J257": {
+        "osm_id": 259057899,
+        "degree": 6,
+        "latitude": 13.0553296,
+        "longitude": 80.2733907
+    },
+    "J258": {
+        "osm_id": 259057900,
+        "degree": 6,
+        "latitude": 13.0553883,
+        "longitude": 80.2726662
+    },
+    "J259": {
+        "osm_id": 259057903,
+        "degree": 6,
+        "latitude": 13.0566994,
+        "longitude": 80.2732357
+    },
+    "J260": {
+        "osm_id": 259057918,
+        "degree": 6,
+        "latitude": 13.0564676,
+        "longitude": 80.2721283
+    },
+    "J261": {
+        "osm_id": 259057922,
+        "degree": 6,
+        "latitude": 13.0531574,
+        "longitude": 80.2718385
+    },
+    "J262": {
+        "osm_id": 259057923,
+        "degree": 6,
+        "latitude": 13.054557,
+        "longitude": 80.2724825
+    },
+    "J263": {
+        "osm_id": 259057926,
+        "degree": 6,
+        "latitude": 13.0549783,
+        "longitude": 80.272015
+    },
+    "J264": {
+        "osm_id": 259057928,
+        "degree": 6,
+        "latitude": 13.0549371,
+        "longitude": 80.2737977
+    },
+    "J265": {
+        "osm_id": 259057932,
+        "degree": 6,
+        "latitude": 13.0554119,
+        "longitude": 80.271489
+    },
+    "J266": {
+        "osm_id": 259057940,
+        "degree": 6,
+        "latitude": 13.05322,
+        "longitude": 80.2715032
+    },
+    "J267": {
+        "osm_id": 259057941,
+        "degree": 6,
+        "latitude": 13.0538723,
+        "longitude": 80.2719668
+    },
+    "J268": {
+        "osm_id": 259057943,
+        "degree": 6,
+        "latitude": 13.0536853,
+        "longitude": 80.2731288
+    },
+    "J269": {
+        "osm_id": 259057944,
+        "degree": 6,
+        "latitude": 13.0543363,
+        "longitude": 80.2724536
+    },
+    "J270": {
+        "osm_id": 259057954,
+        "degree": 6,
+        "latitude": 13.0529503,
+        "longitude": 80.2729838
+    },
+    "J271": {
+        "osm_id": 259057957,
+        "degree": 6,
+        "latitude": 13.0542631,
+        "longitude": 80.2728128
+    },
+    "J272": {
+        "osm_id": 259057959,
+        "degree": 6,
+        "latitude": 13.0530107,
+        "longitude": 80.2726208
+    },
+    "J273": {
+        "osm_id": 259057961,
+        "degree": 6,
+        "latitude": 13.0576612,
+        "longitude": 80.2729348
+    },
+    "J274": {
+        "osm_id": 259057962,
+        "degree": 6,
+        "latitude": 13.0563995,
+        "longitude": 80.2738962
+    },
+    "J275": {
+        "osm_id": 259057963,
+        "degree": 6,
+        "latitude": 13.0559786,
+        "longitude": 80.2738666
+    },
+    "J276": {
+        "osm_id": 259057964,
+        "degree": 6,
+        "latitude": 13.056029,
+        "longitude": 80.2734826
+    },
+    "J277": {
+        "osm_id": 259057967,
+        "degree": 6,
+        "latitude": 13.0587965,
+        "longitude": 80.274829
+    },
+    "J278": {
+        "osm_id": 259057986,
+        "degree": 6,
+        "latitude": 13.0587751,
+        "longitude": 80.275085
+    },
+    "J279": {
+        "osm_id": 259057993,
+        "degree": 6,
+        "latitude": 13.0575984,
+        "longitude": 80.2749195
+    },
+    "J280": {
+        "osm_id": 259057997,
+        "degree": 6,
+        "latitude": 13.0575939,
+        "longitude": 80.2748341
+    },
+    "J281": {
+        "osm_id": 259058000,
+        "degree": 6,
+        "latitude": 13.0587881,
+        "longitude": 80.2748973
+    },
+    "J282": {
+        "osm_id": 259058003,
+        "degree": 6,
+        "latitude": 13.0579123,
+        "longitude": 80.2747026
+    },
+    "J283": {
+        "osm_id": 259058023,
+        "degree": 6,
+        "latitude": 13.0579676,
+        "longitude": 80.2744507
+    },
+    "J284": {
+        "osm_id": 259058058,
+        "degree": 6,
+        "latitude": 13.0576455,
+        "longitude": 80.2743746
+    },
+    "J285": {
+        "osm_id": 259058075,
+        "degree": 6,
+        "latitude": 13.0609364,
+        "longitude": 80.273677
+    },
+    "J286": {
+        "osm_id": 259058084,
+        "degree": 6,
+        "latitude": 13.0615468,
+        "longitude": 80.2736685
+    },
+    "J287": {
+        "osm_id": 259058119,
+        "degree": 6,
+        "latitude": 13.0567809,
+        "longitude": 80.2759467
+    },
+    "J288": {
+        "osm_id": 259058128,
+        "degree": 6,
+        "latitude": 13.056605,
+        "longitude": 80.2763339
+    },
+    "J289": {
+        "osm_id": 259058142,
+        "degree": 6,
+        "latitude": 13.0564296,
+        "longitude": 80.2773073
+    },
+    "J290": {
+        "osm_id": 259058148,
+        "degree": 6,
+        "latitude": 13.0563564,
+        "longitude": 80.2777773
+    },
+    "J291": {
+        "osm_id": 259058151,
+        "degree": 6,
+        "latitude": 13.0557194,
+        "longitude": 80.277765
+    },
+    "J292": {
+        "osm_id": 259058155,
+        "degree": 6,
+        "latitude": 13.058082,
+        "longitude": 80.2779538
+    },
+    "J293": {
+        "osm_id": 259058156,
+        "degree": 6,
+        "latitude": 13.056463,
+        "longitude": 80.2771025
+    },
+    "J294": {
+        "osm_id": 259058160,
+        "degree": 6,
+        "latitude": 13.058125,
+        "longitude": 80.2775757
+    },
+    "J295": {
+        "osm_id": 259058161,
+        "degree": 6,
+        "latitude": 13.0582153,
+        "longitude": 80.2771011
+    },
+    "J296": {
+        "osm_id": 259058164,
+        "degree": 6,
+        "latitude": 13.056857,
+        "longitude": 80.2768434
+    },
+    "J297": {
+        "osm_id": 259058165,
+        "degree": 6,
+        "latitude": 13.0565214,
+        "longitude": 80.2767938
+    },
+    "J298": {
+        "osm_id": 259058166,
+        "degree": 6,
+        "latitude": 13.0567769,
+        "longitude": 80.2773834
+    },
+    "J299": {
+        "osm_id": 259058171,
+        "degree": 6,
+        "latitude": 13.0580169,
+        "longitude": 80.2784211
+    },
+    "J300": {
+        "osm_id": 259058172,
+        "degree": 6,
+        "latitude": 13.0567123,
+        "longitude": 80.2782445
+    },
+    "J301": {
+        "osm_id": 259058173,
+        "degree": 6,
+        "latitude": 13.0559622,
+        "longitude": 80.278075
+    },
+    "J302": {
+        "osm_id": 259058182,
+        "degree": 6,
+        "latitude": 13.0566741,
+        "longitude": 80.2786206
+    },
+    "J303": {
+        "osm_id": 259058183,
+        "degree": 6,
+        "latitude": 13.0566625,
+        "longitude": 80.2787306
+    },
+    "J304": {
+        "osm_id": 259058184,
+        "degree": 6,
+        "latitude": 13.0579648,
+        "longitude": 80.2789028
+    },
+    "J305": {
+        "osm_id": 259058185,
+        "degree": 6,
+        "latitude": 13.0579287,
+        "longitude": 80.2791188
+    },
+    "J306": {
+        "osm_id": 259058187,
+        "degree": 6,
+        "latitude": 13.0545237,
+        "longitude": 80.2789937
+    },
+    "J307": {
+        "osm_id": 259058190,
+        "degree": 6,
+        "latitude": 13.0526026,
+        "longitude": 80.2786406
+    },
+    "J308": {
+        "osm_id": 259058211,
+        "degree": 6,
+        "latitude": 13.0529751,
+        "longitude": 80.2811422
+    },
+    "J309": {
+        "osm_id": 259058213,
+        "degree": 6,
+        "latitude": 13.0534397,
+        "longitude": 80.2800262
+    },
+    "J310": {
+        "osm_id": 259058214,
+        "degree": 6,
+        "latitude": 13.0535403,
+        "longitude": 80.2797954
+    },
+    "J311": {
+        "osm_id": 259058216,
+        "degree": 6,
+        "latitude": 13.0544444,
+        "longitude": 80.277639
+    },
+    "J312": {
+        "osm_id": 259058217,
+        "degree": 6,
+        "latitude": 13.0576471,
+        "longitude": 80.2743155
+    },
+    "J313": {
+        "osm_id": 259058218,
+        "degree": 6,
+        "latitude": 13.0562271,
+        "longitude": 80.2741974
+    },
+    "J314": {
+        "osm_id": 259058237,
+        "degree": 6,
+        "latitude": 13.0562337,
+        "longitude": 80.2746317
+    },
+    "J315": {
+        "osm_id": 259058244,
+        "degree": 6,
+        "latitude": 13.0555945,
+        "longitude": 80.2746038
+    },
+    "J316": {
+        "osm_id": 259058259,
+        "degree": 6,
+        "latitude": 13.0540863,
+        "longitude": 80.2745124
+    },
+    "J317": {
+        "osm_id": 259058264,
+        "degree": 6,
+        "latitude": 13.0535644,
+        "longitude": 80.2745146
+    },
+    "J318": {
+        "osm_id": 259058266,
+        "degree": 6,
+        "latitude": 13.053736,
+        "longitude": 80.2737415
+    },
+    "J319": {
+        "osm_id": 259058267,
+        "degree": 6,
+        "latitude": 13.0536657,
+        "longitude": 80.2740912
+    },
+    "J320": {
+        "osm_id": 259058269,
+        "degree": 6,
+        "latitude": 13.0534772,
+        "longitude": 80.2757156
+    },
+    "J321": {
+        "osm_id": 259058289,
+        "degree": 6,
+        "latitude": 13.0542667,
+        "longitude": 80.2757439
+    },
+    "J322": {
+        "osm_id": 259058338,
+        "degree": 6,
+        "latitude": 13.0540042,
+        "longitude": 80.2775224
+    },
+    "J323": {
+        "osm_id": 259058347,
+        "degree": 6,
+        "latitude": 13.0532823,
+        "longitude": 80.2781007
+    },
+    "J324": {
+        "osm_id": 259058369,
+        "degree": 6,
+        "latitude": 13.0533373,
+        "longitude": 80.2777088
+    },
+    "J325": {
+        "osm_id": 259058371,
+        "degree": 6,
+        "latitude": 13.0536918,
+        "longitude": 80.277463
+    },
+    "J326": {
+        "osm_id": 259058389,
+        "degree": 6,
+        "latitude": 13.0551744,
+        "longitude": 80.2778921
+    },
+    "J327": {
+        "osm_id": 259058403,
+        "degree": 6,
+        "latitude": 13.0536882,
+        "longitude": 80.2788251
+    },
+    "J328": {
+        "osm_id": 259058419,
+        "degree": 6,
+        "latitude": 13.0525009,
+        "longitude": 80.2793068
+    },
+    "J329": {
+        "osm_id": 259058425,
+        "degree": 6,
+        "latitude": 13.0523792,
+        "longitude": 80.2786011
+    },
+    "J330": {
+        "osm_id": 259058426,
+        "degree": 6,
+        "latitude": 13.0525549,
+        "longitude": 80.2778146
+    },
+    "J331": {
+        "osm_id": 259058436,
+        "degree": 6,
+        "latitude": 13.0529794,
+        "longitude": 80.2769492
+    },
+    "J332": {
+        "osm_id": 259058439,
+        "degree": 6,
+        "latitude": 13.0538256,
+        "longitude": 80.274528
+    },
+    "J333": {
+        "osm_id": 259058441,
+        "degree": 6,
+        "latitude": 13.0562267,
+        "longitude": 80.2742955
+    },
+    "J334": {
+        "osm_id": 259058451,
+        "degree": 6,
+        "latitude": 13.0566451,
+        "longitude": 80.2788248
+    },
+    "J335": {
+        "osm_id": 259058457,
+        "degree": 6,
+        "latitude": 13.061278,
+        "longitude": 80.269744
+    },
+    "J336": {
+        "osm_id": 259209328,
+        "degree": 6,
+        "latitude": 13.0588226,
+        "longitude": 80.2746401
+    },
+    "J337": {
+        "osm_id": 259502669,
+        "degree": 6,
+        "latitude": 13.0601871,
+        "longitude": 80.2701725
+    },
+    "J338": {
+        "osm_id": 259502670,
+        "degree": 6,
+        "latitude": 13.0582857,
+        "longitude": 80.2711555
+    },
+    "J339": {
+        "osm_id": 259502676,
+        "degree": 6,
+        "latitude": 13.0575604,
+        "longitude": 80.27061
+    },
+    "J340": {
+        "osm_id": 259502678,
+        "degree": 6,
+        "latitude": 13.057682,
+        "longitude": 80.2696647
+    },
+    "J341": {
+        "osm_id": 259502679,
+        "degree": 6,
+        "latitude": 13.0591919,
+        "longitude": 80.2702635
+    },
+    "J342": {
+        "osm_id": 259502680,
+        "degree": 6,
+        "latitude": 13.0594922,
+        "longitude": 80.2702757
+    },
+    "J343": {
+        "osm_id": 259502681,
+        "degree": 6,
+        "latitude": 13.0594694,
+        "longitude": 80.2714457
+    },
+    "J344": {
+        "osm_id": 259502684,
+        "degree": 6,
+        "latitude": 13.0595042,
+        "longitude": 80.2701943
+    },
+    "J345": {
+        "osm_id": 259502695,
+        "degree": 6,
+        "latitude": 13.0603491,
+        "longitude": 80.2714842
+    },
+    "J346": {
+        "osm_id": 259502728,
+        "degree": 6,
+        "latitude": 13.0586956,
+        "longitude": 80.2697396
+    },
+    "J347": {
+        "osm_id": 259502734,
+        "degree": 6,
+        "latitude": 13.057725,
+        "longitude": 80.2713659
+    },
+    "J348": {
+        "osm_id": 259502736,
+        "degree": 6,
+        "latitude": 13.0577834,
+        "longitude": 80.2706379
+    },
+    "J349": {
+        "osm_id": 259502738,
+        "degree": 6,
+        "latitude": 13.0550631,
+        "longitude": 80.2702198
+    },
+    "J350": {
+        "osm_id": 259502744,
+        "degree": 6,
+        "latitude": 13.0532861,
+        "longitude": 80.2709481
+    },
+    "J351": {
+        "osm_id": 259502752,
+        "degree": 6,
+        "latitude": 13.0538058,
+        "longitude": 80.2696462
+    },
+    "J352": {
+        "osm_id": 259502755,
+        "degree": 6,
+        "latitude": 13.0528597,
+        "longitude": 80.2694558
+    },
+    "J353": {
+        "osm_id": 259502757,
+        "degree": 6,
+        "latitude": 13.052404,
+        "longitude": 80.2694081
+    },
+    "J354": {
+        "osm_id": 259502770,
+        "degree": 6,
+        "latitude": 13.0524706,
+        "longitude": 80.2681357
+    },
+    "J355": {
+        "osm_id": 259502771,
+        "degree": 6,
+        "latitude": 13.0533242,
+        "longitude": 80.2705198
+    },
+    "J356": {
+        "osm_id": 259502773,
+        "degree": 6,
+        "latitude": 13.053273,
+        "longitude": 80.2710581
+    },
+    "J357": {
+        "osm_id": 259502775,
+        "degree": 6,
+        "latitude": 13.0532295,
+        "longitude": 80.2714079
+    },
+    "J358": {
+        "osm_id": 259502777,
+        "degree": 6,
+        "latitude": 13.0531773,
+        "longitude": 80.2717407
+    },
+    "J359": {
+        "osm_id": 259502780,
+        "degree": 6,
+        "latitude": 13.0531252,
+        "longitude": 80.2719986
+    },
+    "J360": {
+        "osm_id": 259502782,
+        "degree": 6,
+        "latitude": 13.0530681,
+        "longitude": 80.272334
+    },
+    "J361": {
+        "osm_id": 259502786,
+        "degree": 6,
+        "latitude": 13.053737,
+        "longitude": 80.269943
+    },
+    "J362": {
+        "osm_id": 259502789,
+        "degree": 6,
+        "latitude": 13.0537108,
+        "longitude": 80.2706831
+    },
+    "J363": {
+        "osm_id": 259502790,
+        "degree": 6,
+        "latitude": 13.0536591,
+        "longitude": 80.2710432
+    },
+    "J364": {
+        "osm_id": 259502791,
+        "degree": 6,
+        "latitude": 13.0547527,
+        "longitude": 80.2708333
+    },
+    "J365": {
+        "osm_id": 259502795,
+        "degree": 6,
+        "latitude": 13.0533445,
+        "longitude": 80.2703204
+    },
+    "J366": {
+        "osm_id": 259502800,
+        "degree": 6,
+        "latitude": 13.0565167,
+        "longitude": 80.2715105
+    },
+    "J367": {
+        "osm_id": 259502808,
+        "degree": 6,
+        "latitude": 13.0554787,
+        "longitude": 80.270377
+    },
+    "J368": {
+        "osm_id": 259502811,
+        "degree": 6,
+        "latitude": 13.057225,
+        "longitude": 80.271495
+    },
+    "J369": {
+        "osm_id": 259502813,
+        "degree": 6,
+        "latitude": 13.056529,
+        "longitude": 80.271433
+    },
+    "J370": {
+        "osm_id": 259502877,
+        "degree": 6,
+        "latitude": 13.0545601,
+        "longitude": 80.2704883
+    },
+    "J371": {
+        "osm_id": 259502878,
+        "degree": 6,
+        "latitude": 13.0546332,
+        "longitude": 80.2700734
+    },
+    "J372": {
+        "osm_id": 259502881,
+        "degree": 6,
+        "latitude": 13.0534131,
+        "longitude": 80.2692634
+    },
+    "J373": {
+        "osm_id": 259509828,
+        "degree": 6,
+        "latitude": 13.0534842,
+        "longitude": 80.2684259
+    },
+    "J374": {
+        "osm_id": 259773497,
+        "degree": 6,
+        "latitude": 13.0525711,
+        "longitude": 80.2694246
+    },
+    "J375": {
+        "osm_id": 259773500,
+        "degree": 6,
+        "latitude": 13.0525984,
+        "longitude": 80.2704233
+    },
+    "J376": {
+        "osm_id": 259773507,
+        "degree": 6,
+        "latitude": 13.0525803,
+        "longitude": 80.2726819
+    },
+    "J377": {
+        "osm_id": 259773509,
+        "degree": 6,
+        "latitude": 13.0528692,
+        "longitude": 80.2733651
+    },
+    "J378": {
+        "osm_id": 259773510,
+        "degree": 6,
+        "latitude": 13.0525132,
+        "longitude": 80.2733386
+    },
+    "J379": {
+        "osm_id": 259773515,
+        "degree": 6,
+        "latitude": 13.0529234,
+        "longitude": 80.2731091
+    },
+    "J380": {
+        "osm_id": 259773516,
+        "degree": 6,
+        "latitude": 13.0529947,
+        "longitude": 80.272686
+    },
+    "J381": {
+        "osm_id": 259773534,
+        "degree": 6,
+        "latitude": 13.0521319,
+        "longitude": 80.2720166
+    },
+    "J382": {
+        "osm_id": 259773542,
+        "degree": 6,
+        "latitude": 13.0521353,
+        "longitude": 80.2721002
+    },
+    "J383": {
+        "osm_id": 259773547,
+        "degree": 6,
+        "latitude": 13.053018,
+        "longitude": 80.2694715
+    },
+    "J384": {
+        "osm_id": 259773548,
+        "degree": 6,
+        "latitude": 13.0528931,
+        "longitude": 80.2704737
+    },
+    "J385": {
+        "osm_id": 262675805,
+        "degree": 6,
+        "latitude": 13.0533089,
+        "longitude": 80.2779165
+    },
+    "J386": {
+        "osm_id": 262675988,
+        "degree": 6,
+        "latitude": 13.0523398,
+        "longitude": 80.2750882
+    },
+    "J387": {
+        "osm_id": 262675992,
+        "degree": 6,
+        "latitude": 13.0531146,
+        "longitude": 80.2737006
+    },
+    "J388": {
+        "osm_id": 270432736,
+        "degree": 6,
+        "latitude": 13.0579707,
+        "longitude": 80.2788527
+    },
+    "J389": {
+        "osm_id": 270432755,
+        "degree": 6,
+        "latitude": 13.06422,
+        "longitude": 80.2806289
+    },
+    "J390": {
+        "osm_id": 321842353,
+        "degree": 6,
+        "latitude": 13.0561847,
+        "longitude": 80.2807843
+    },
+    "J391": {
+        "osm_id": 321842580,
+        "degree": 6,
+        "latitude": 13.0562921,
+        "longitude": 80.2796565
+    },
+    "J392": {
+        "osm_id": 367869636,
+        "degree": 6,
+        "latitude": 13.0708969,
+        "longitude": 80.2714881
+    },
+    "J393": {
+        "osm_id": 367869639,
+        "degree": 6,
+        "latitude": 13.0711894,
+        "longitude": 80.2715468
+    },
+    "J394": {
+        "osm_id": 604693365,
+        "degree": 6,
+        "latitude": 13.0538027,
+        "longitude": 80.2749291
+    },
+    "J395": {
+        "osm_id": 604693379,
+        "degree": 6,
+        "latitude": 13.0566529,
+        "longitude": 80.273223
+    },
+    "J396": {
+        "osm_id": 604693401,
+        "degree": 6,
+        "latitude": 13.0592756,
+        "longitude": 80.2715212
+    },
+    "J397": {
+        "osm_id": 604693411,
+        "degree": 6,
+        "latitude": 13.058152,
+        "longitude": 80.2761841
+    },
+    "J398": {
+        "osm_id": 604693412,
+        "degree": 6,
+        "latitude": 13.058084,
+        "longitude": 80.2765788
+    },
+    "J399": {
+        "osm_id": 604693418,
+        "degree": 6,
+        "latitude": 13.0542314,
+        "longitude": 80.2783727
+    },
+    "J400": {
+        "osm_id": 604693432,
+        "degree": 6,
+        "latitude": 13.0549355,
+        "longitude": 80.2790738
+    },
+    "J401": {
+        "osm_id": 604693435,
+        "degree": 6,
+        "latitude": 13.0558742,
+        "longitude": 80.2786968
+    },
+    "J402": {
+        "osm_id": 604693437,
+        "degree": 6,
+        "latitude": 13.0558383,
+        "longitude": 80.2796444
+    },
+    "J403": {
+        "osm_id": 604693440,
+        "degree": 6,
+        "latitude": 13.0560229,
+        "longitude": 80.279625
+    },
+    "J404": {
+        "osm_id": 604693444,
+        "degree": 6,
+        "latitude": 13.055654,
+        "longitude": 80.2802704
+    },
+    "J405": {
+        "osm_id": 604693445,
+        "degree": 6,
+        "latitude": 13.0554876,
+        "longitude": 80.2802759
+    },
+    "J406": {
+        "osm_id": 604693447,
+        "degree": 6,
+        "latitude": 13.0560115,
+        "longitude": 80.2802385
+    },
+    "J407": {
+        "osm_id": 604693449,
+        "degree": 6,
+        "latitude": 13.0567354,
+        "longitude": 80.2801654
+    },
+    "J408": {
+        "osm_id": 604707651,
+        "degree": 6,
+        "latitude": 13.059074,
+        "longitude": 80.2748676
+    },
+    "J409": {
+        "osm_id": 604707662,
+        "degree": 6,
+        "latitude": 13.0602673,
+        "longitude": 80.274286
+    },
+    "J410": {
+        "osm_id": 604707670,
+        "degree": 6,
+        "latitude": 13.0608828,
+        "longitude": 80.2745573
+    },
+    "J411": {
+        "osm_id": 604707672,
+        "degree": 6,
+        "latitude": 13.0608664,
+        "longitude": 80.274883
+    },
+    "J412": {
+        "osm_id": 604707686,
+        "degree": 6,
+        "latitude": 13.062508,
+        "longitude": 80.276494
+    },
+    "J413": {
+        "osm_id": 604707690,
+        "degree": 6,
+        "latitude": 13.0621379,
+        "longitude": 80.2769824
+    },
+    "J414": {
+        "osm_id": 604707702,
+        "degree": 6,
+        "latitude": 13.0627814,
+        "longitude": 80.2769561
+    },
+    "J415": {
+        "osm_id": 604707726,
+        "degree": 6,
+        "latitude": 13.0652286,
+        "longitude": 80.2752079
+    },
+    "J416": {
+        "osm_id": 604707731,
+        "degree": 6,
+        "latitude": 13.0642058,
+        "longitude": 80.2759479
+    },
+    "J417": {
+        "osm_id": 605229992,
+        "degree": 6,
+        "latitude": 13.0591531,
+        "longitude": 80.2725449
+    },
+    "J418": {
+        "osm_id": 605229994,
+        "degree": 6,
+        "latitude": 13.0597801,
+        "longitude": 80.2726374
+    },
+    "J419": {
+        "osm_id": 605229996,
+        "degree": 6,
+        "latitude": 13.0595484,
+        "longitude": 80.2726011
+    },
+    "J420": {
+        "osm_id": 605229997,
+        "degree": 6,
+        "latitude": 13.0598183,
+        "longitude": 80.2717451
+    },
+    "J421": {
+        "osm_id": 605229999,
+        "degree": 6,
+        "latitude": 13.0597636,
+        "longitude": 80.2729234
+    },
+    "J422": {
+        "osm_id": 605230001,
+        "degree": 6,
+        "latitude": 13.0590651,
+        "longitude": 80.2731542
+    },
+    "J423": {
+        "osm_id": 605230005,
+        "degree": 6,
+        "latitude": 13.0590292,
+        "longitude": 80.2734258
+    },
+    "J424": {
+        "osm_id": 605230007,
+        "degree": 6,
+        "latitude": 13.0594922,
+        "longitude": 80.2732124
+    },
+    "J425": {
+        "osm_id": 605230026,
+        "degree": 6,
+        "latitude": 13.0603494,
+        "longitude": 80.273024
+    },
+    "J426": {
+        "osm_id": 605230044,
+        "degree": 6,
+        "latitude": 13.0612984,
+        "longitude": 80.2733602
+    },
+    "J427": {
+        "osm_id": 605230070,
+        "degree": 6,
+        "latitude": 13.0631164,
+        "longitude": 80.2684205
+    },
+    "J428": {
+        "osm_id": 605230086,
+        "degree": 6,
+        "latitude": 13.0628422,
+        "longitude": 80.2704546
+    },
+    "J429": {
+        "osm_id": 605230125,
+        "degree": 6,
+        "latitude": 13.0654677,
+        "longitude": 80.2732482
+    },
+    "J430": {
+        "osm_id": 605230126,
+        "degree": 6,
+        "latitude": 13.0654664,
+        "longitude": 80.273495
+    },
+    "J431": {
+        "osm_id": 605230133,
+        "degree": 6,
+        "latitude": 13.0654527,
+        "longitude": 80.2730513
+    },
+    "J432": {
+        "osm_id": 1272397827,
+        "degree": 6,
+        "latitude": 13.0573611,
+        "longitude": 80.2791084
+    },
+    "J433": {
+        "osm_id": 1272397969,
+        "degree": 6,
+        "latitude": 13.0565615,
+        "longitude": 80.2793921
+    },
+    "J434": {
+        "osm_id": 1272398001,
+        "degree": 6,
+        "latitude": 13.0569875,
+        "longitude": 80.2801671
+    },
+    "J435": {
+        "osm_id": 1272398032,
+        "degree": 6,
+        "latitude": 13.0571601,
+        "longitude": 80.2801766
+    },
+    "J436": {
+        "osm_id": 1272398204,
+        "degree": 6,
+        "latitude": 13.056855,
+        "longitude": 80.2801538
+    },
+    "J437": {
+        "osm_id": 1272398377,
+        "degree": 6,
+        "latitude": 13.0571969,
+        "longitude": 80.2791088
+    },
+    "J438": {
+        "osm_id": 1272398436,
+        "degree": 6,
+        "latitude": 13.0565445,
+        "longitude": 80.2801771
+    },
+    "J439": {
+        "osm_id": 1272398501,
+        "degree": 6,
+        "latitude": 13.0554553,
+        "longitude": 80.2791685
+    },
+    "J440": {
+        "osm_id": 1279571362,
+        "degree": 6,
+        "latitude": 13.0524287,
+        "longitude": 80.2800495
+    },
+    "J441": {
+        "osm_id": 2214509241,
+        "degree": 6,
+        "latitude": 13.0645308,
+        "longitude": 80.2796536
+    },
+    "J442": {
+        "osm_id": 2217244430,
+        "degree": 6,
+        "latitude": 13.0523509,
+        "longitude": 80.2803601
+    },
+    "J443": {
+        "osm_id": 2217244449,
+        "degree": 6,
+        "latitude": 13.0535804,
+        "longitude": 80.2744301
+    },
+    "J444": {
+        "osm_id": 2217244490,
+        "degree": 6,
+        "latitude": 13.0541948,
+        "longitude": 80.2765614
+    },
+    "J445": {
+        "osm_id": 2217244494,
+        "degree": 6,
+        "latitude": 13.0542479,
+        "longitude": 80.2783098
+    },
+    "J446": {
+        "osm_id": 2217244519,
+        "degree": 6,
+        "latitude": 13.0551174,
+        "longitude": 80.2803156
+    },
+    "J447": {
+        "osm_id": 2217244528,
+        "degree": 6,
+        "latitude": 13.0553048,
+        "longitude": 80.2748826
+    },
+    "J448": {
+        "osm_id": 2217293917,
+        "degree": 6,
+        "latitude": 13.0542095,
+        "longitude": 80.27044
+    },
+    "J449": {
+        "osm_id": 2217293944,
+        "degree": 6,
+        "latitude": 13.05474,
+        "longitude": 80.2714318
+    },
+    "J450": {
+        "osm_id": 2217344520,
+        "degree": 6,
+        "latitude": 13.059271,
+        "longitude": 80.2717961
+    },
+    "J451": {
+        "osm_id": 2217344521,
+        "degree": 6,
+        "latitude": 13.059813,
+        "longitude": 80.2718409
+    },
+    "J452": {
+        "osm_id": 2217344522,
+        "degree": 6,
+        "latitude": 13.0606996,
+        "longitude": 80.2714799
+    },
+    "J453": {
+        "osm_id": 2217344536,
+        "degree": 6,
+        "latitude": 13.0625547,
+        "longitude": 80.2742009
+    },
+    "J454": {
+        "osm_id": 2218064775,
+        "degree": 6,
+        "latitude": 13.0594642,
+        "longitude": 80.2708273
+    },
+    "J455": {
+        "osm_id": 2218064791,
+        "degree": 6,
+        "latitude": 13.0601353,
+        "longitude": 80.270082
+    },
+    "J456": {
+        "osm_id": 2218064798,
+        "degree": 6,
+        "latitude": 13.0602373,
+        "longitude": 80.2721336
+    },
+    "J457": {
+        "osm_id": 2218064811,
+        "degree": 6,
+        "latitude": 13.0605776,
+        "longitude": 80.2750635
+    },
+    "J458": {
+        "osm_id": 2218064812,
+        "degree": 6,
+        "latitude": 13.0606095,
+        "longitude": 80.2756695
+    },
+    "J459": {
+        "osm_id": 2218064858,
+        "degree": 6,
+        "latitude": 13.0620555,
+        "longitude": 80.2737964
+    },
+    "J460": {
+        "osm_id": 2218064922,
+        "degree": 6,
+        "latitude": 13.0639133,
+        "longitude": 80.2715744
+    },
+    "J461": {
+        "osm_id": 2218065114,
+        "degree": 6,
+        "latitude": 13.0648717,
+        "longitude": 80.2760355
+    },
+    "J462": {
+        "osm_id": 2218065144,
+        "degree": 6,
+        "latitude": 13.0652355,
+        "longitude": 80.2750076
+    },
+    "J463": {
+        "osm_id": 2218065173,
+        "degree": 6,
+        "latitude": 13.0654625,
+        "longitude": 80.2728799
+    },
+    "J464": {
+        "osm_id": 2218065175,
+        "degree": 6,
+        "latitude": 13.0654669,
+        "longitude": 80.2728018
+    },
+    "J465": {
+        "osm_id": 2218065177,
+        "degree": 6,
+        "latitude": 13.0654678,
+        "longitude": 80.2726603
+    },
+    "J466": {
+        "osm_id": 2218065179,
+        "degree": 6,
+        "latitude": 13.0654829,
+        "longitude": 80.2725737
+    },
+    "J467": {
+        "osm_id": 2241832818,
+        "degree": 6,
+        "latitude": 13.0719517,
+        "longitude": 80.270842
+    },
+    "J468": {
+        "osm_id": 2241832823,
+        "degree": 6,
+        "latitude": 13.0722367,
+        "longitude": 80.2709191
+    },
+    "J469": {
+        "osm_id": 2241930019,
+        "degree": 6,
+        "latitude": 13.0691007,
+        "longitude": 80.2696395
+    },
+    "J470": {
+        "osm_id": 2241930213,
+        "degree": 6,
+        "latitude": 13.07164,
+        "longitude": 80.2711603
+    },
+    "J471": {
+        "osm_id": 3724641220,
+        "degree": 6,
+        "latitude": 13.0570248,
+        "longitude": 80.2791023
+    },
+    "J472": {
+        "osm_id": 3724693474,
+        "degree": 6,
+        "latitude": 13.0613328,
+        "longitude": 80.2765648
+    },
+    "J473": {
+        "osm_id": 4153716538,
+        "degree": 6,
+        "latitude": 13.0564984,
+        "longitude": 80.2754846
+    },
+    "J474": {
+        "osm_id": 4153716539,
+        "degree": 6,
+        "latitude": 13.0564458,
+        "longitude": 80.27587
+    },
+    "J475": {
+        "osm_id": 5540602754,
+        "degree": 6,
+        "latitude": 13.0529498,
+        "longitude": 80.2778602
+    },
+    "J476": {
+        "osm_id": 5540603252,
+        "degree": 6,
+        "latitude": 13.0524417,
+        "longitude": 80.2794765
+    },
+    "J477": {
+        "osm_id": 7025024099,
+        "degree": 6,
+        "latitude": 13.0678361,
+        "longitude": 80.2804846
+    },
+    "J478": {
+        "osm_id": 7034980332,
+        "degree": 6,
+        "latitude": 13.0634052,
+        "longitude": 80.2751777
+    },
+    "J479": {
+        "osm_id": 7034980333,
+        "degree": 6,
+        "latitude": 13.0636833,
+        "longitude": 80.2751818
+    },
+    "J480": {
+        "osm_id": 7042652233,
+        "degree": 6,
+        "latitude": 13.0620539,
+        "longitude": 80.2767044
+    },
+    "J481": {
+        "osm_id": 7042652234,
+        "degree": 6,
+        "latitude": 13.0620815,
+        "longitude": 80.2762561
+    },
+    "J482": {
+        "osm_id": 9181569269,
+        "degree": 6,
+        "latitude": 13.052906,
+        "longitude": 80.2688627
+    },
+    "J483": {
+        "osm_id": 9181594205,
+        "degree": 6,
+        "latitude": 13.0537682,
+        "longitude": 80.2801305
+    },
+    "J484": {
+        "osm_id": 9187213103,
+        "degree": 6,
+        "latitude": 13.0563138,
+        "longitude": 80.2707524
+    },
+    "J485": {
+        "osm_id": 9187378721,
+        "degree": 6,
+        "latitude": 13.0618583,
+        "longitude": 80.2769684
+    },
+    "J486": {
+        "osm_id": 9187378747,
+        "degree": 6,
+        "latitude": 13.0671703,
+        "longitude": 80.2814343
+    },
+    "J487": {
+        "osm_id": 9189193664,
+        "degree": 6,
+        "latitude": 13.0592296,
+        "longitude": 80.2699329
+    },
+    "J488": {
+        "osm_id": 9904554778,
+        "degree": 6,
+        "latitude": 13.065204,
+        "longitude": 80.271144
+    },
+    "J489": {
+        "osm_id": 9904554799,
+        "degree": 6,
+        "latitude": 13.0626805,
+        "longitude": 80.2724702
+    },
+    "J490": {
+        "osm_id": 9904659721,
+        "degree": 6,
+        "latitude": 13.0545288,
+        "longitude": 80.2741512
+    },
+    "J491": {
+        "osm_id": 9904659722,
+        "degree": 6,
+        "latitude": 13.0548768,
+        "longitude": 80.2701471
+    },
+    "J492": {
+        "osm_id": 9904659746,
+        "degree": 6,
+        "latitude": 13.0641297,
+        "longitude": 80.273953
+    },
+    "J493": {
+        "osm_id": 9904823224,
+        "degree": 6,
+        "latitude": 13.0558408,
+        "longitude": 80.2802545
+    },
+    "J494": {
+        "osm_id": 9983155427,
+        "degree": 6,
+        "latitude": 13.0690776,
+        "longitude": 80.2864312
+    },
+    "J495": {
+        "osm_id": 9983155431,
+        "degree": 6,
+        "latitude": 13.0697945,
+        "longitude": 80.2878186
+    },
+    "J496": {
+        "osm_id": 9983155438,
+        "degree": 6,
+        "latitude": 13.0693544,
+        "longitude": 80.2869086
+    },
+    "J497": {
+        "osm_id": 9983155439,
+        "degree": 6,
+        "latitude": 13.0699872,
+        "longitude": 80.2871012
+    },
+    "J498": {
+        "osm_id": 9983155440,
+        "degree": 6,
+        "latitude": 13.0698746,
+        "longitude": 80.2866796
+    },
+    "J499": {
+        "osm_id": 9983155441,
+        "degree": 6,
+        "latitude": 13.0697654,
+        "longitude": 80.2870337
+    },
+    "J500": {
+        "osm_id": 9983155442,
+        "degree": 6,
+        "latitude": 13.0696308,
+        "longitude": 80.2866033
+    },
+    "J501": {
+        "osm_id": 9983155443,
+        "degree": 6,
+        "latitude": 13.0695199,
+        "longitude": 80.286959
+    },
+    "J502": {
+        "osm_id": 9983155444,
+        "degree": 6,
+        "latitude": 13.0694682,
+        "longitude": 80.2853278
+    },
+    "J503": {
+        "osm_id": 9983155456,
+        "degree": 6,
+        "latitude": 13.0696102,
+        "longitude": 80.2853962
+    },
+    "J504": {
+        "osm_id": 11042247281,
+        "degree": 6,
+        "latitude": 13.0558546,
+        "longitude": 80.2770911
+    },
+    "J505": {
+        "osm_id": 11042247282,
+        "degree": 6,
+        "latitude": 13.0553712,
+        "longitude": 80.2769831
+    },
+    "J506": {
+        "osm_id": 11043266165,
+        "degree": 6,
+        "latitude": 13.0530308,
+        "longitude": 80.2756393
+    },
+    "J507": {
+        "osm_id": 11056437675,
+        "degree": 6,
+        "latitude": 13.0605067,
+        "longitude": 80.2743029
+    },
+    "J508": {
+        "osm_id": 11056490759,
+        "degree": 6,
+        "latitude": 13.0611134,
+        "longitude": 80.2764103
+    },
+    "J509": {
+        "osm_id": 11061397342,
+        "degree": 6,
+        "latitude": 13.0544366,
+        "longitude": 80.2793428
+    },
+    "J510": {
+        "osm_id": 11274513921,
+        "degree": 6,
+        "latitude": 13.0693891,
+        "longitude": 80.2696432
+    },
+    "J511": {
+        "osm_id": 11274513922,
+        "degree": 6,
+        "latitude": 13.0693252,
+        "longitude": 80.270008
+    },
+    "J512": {
+        "osm_id": 11299768026,
+        "degree": 6,
+        "latitude": 13.0650336,
+        "longitude": 80.2772635
+    },
+    "J513": {
+        "osm_id": 11613260523,
+        "degree": 6,
+        "latitude": 13.0698051,
+        "longitude": 80.269547
+    },
+    "J514": {
+        "osm_id": 11613260531,
+        "degree": 6,
+        "latitude": 13.0693758,
+        "longitude": 80.269719
+    },
+    "J515": {
+        "osm_id": 11622067367,
+        "degree": 6,
+        "latitude": 13.0571958,
+        "longitude": 80.276871
+    },
+    "J516": {
+        "osm_id": 11622085230,
+        "degree": 6,
+        "latitude": 13.0583048,
+        "longitude": 80.2756757
+    },
+    "J517": {
+        "osm_id": 11622119217,
+        "degree": 6,
+        "latitude": 13.0565695,
+        "longitude": 80.2765292
+    },
+    "J518": {
+        "osm_id": 11722112181,
+        "degree": 6,
+        "latitude": 13.0527976,
+        "longitude": 80.2786752
+    },
+    "J519": {
+        "osm_id": 11786112176,
+        "degree": 6,
+        "latitude": 13.0529429,
+        "longitude": 80.2683797
+    },
+    "J520": {
+        "osm_id": 11882657319,
+        "degree": 6,
+        "latitude": 13.0562736,
+        "longitude": 80.2787656
+    },
+    "J521": {
+        "osm_id": 11882657320,
+        "degree": 6,
+        "latitude": 13.0563032,
+        "longitude": 80.2785507
+    },
+    "J522": {
+        "osm_id": 11882657331,
+        "degree": 6,
+        "latitude": 13.0558617,
+        "longitude": 80.2791546
+    },
+    "J523": {
+        "osm_id": 11944740686,
+        "degree": 6,
+        "latitude": 13.0683251,
+        "longitude": 80.2694044
+    },
+    "J524": {
+        "osm_id": 12035467073,
+        "degree": 6,
+        "latitude": 13.0568697,
+        "longitude": 80.2705702
+    },
+    "J525": {
+        "osm_id": 12213569390,
+        "degree": 6,
+        "latitude": 13.0542838,
+        "longitude": 80.2789429
+    },
+    "J526": {
+        "osm_id": 12213569409,
+        "degree": 6,
+        "latitude": 13.0603903,
+        "longitude": 80.2794614
+    },
+    "J527": {
+        "osm_id": 12213569421,
+        "degree": 6,
+        "latitude": 13.0582621,
+        "longitude": 80.2789808
+    },
+    "J528": {
+        "osm_id": 12213569422,
+        "degree": 6,
+        "latitude": 13.0582861,
+        "longitude": 80.278891
+    },
+    "J529": {
+        "osm_id": 12213569427,
+        "degree": 6,
+        "latitude": 13.0581491,
+        "longitude": 80.2795007
+    },
+    "J530": {
+        "osm_id": 12213569431,
+        "degree": 6,
+        "latitude": 13.0608064,
+        "longitude": 80.2786416
+    },
+    "J531": {
+        "osm_id": 12213569433,
+        "degree": 6,
+        "latitude": 13.0605838,
+        "longitude": 80.2786002
+    },
+    "J532": {
+        "osm_id": 12213569436,
+        "degree": 6,
+        "latitude": 13.0607747,
+        "longitude": 80.2777023
+    },
+    "J533": {
+        "osm_id": 243325391,
+        "degree": 5,
+        "latitude": 13.0722422,
+        "longitude": 80.2739583
+    },
+    "J534": {
+        "osm_id": 248467505,
+        "degree": 5,
+        "latitude": 13.0682704,
+        "longitude": 80.269388
+    },
+    "J535": {
+        "osm_id": 2482072908,
+        "degree": 5,
+        "latitude": 13.0681631,
+        "longitude": 80.2719978
+    },
+    "J536": {
+        "osm_id": 30037903,
+        "degree": 4,
+        "latitude": 13.0716541,
+        "longitude": 80.2743139
+    },
+    "J537": {
+        "osm_id": 30037904,
+        "degree": 4,
+        "latitude": 13.0717936,
+        "longitude": 80.2743746
+    },
+    "J538": {
+        "osm_id": 243065473,
+        "degree": 4,
+        "latitude": 13.0585628,
+        "longitude": 80.2684415
+    },
+    "J539": {
+        "osm_id": 247690516,
+        "degree": 4,
+        "latitude": 13.0585552,
+        "longitude": 80.2683231
+    },
+    "J540": {
+        "osm_id": 247691285,
+        "degree": 4,
+        "latitude": 13.0658125,
+        "longitude": 80.2761519
+    },
+    "J541": {
+        "osm_id": 247691286,
+        "degree": 4,
+        "latitude": 13.0652515,
+        "longitude": 80.2773771
+    },
+    "J542": {
+        "osm_id": 247691288,
+        "degree": 4,
+        "latitude": 13.0647735,
+        "longitude": 80.2782924
+    },
+    "J543": {
+        "osm_id": 247692001,
+        "degree": 4,
+        "latitude": 13.0643907,
+        "longitude": 80.280742
+    },
+    "J544": {
+        "osm_id": 247692589,
+        "degree": 4,
+        "latitude": 13.0678163,
+        "longitude": 80.28421
+    },
+    "J545": {
+        "osm_id": 248467988,
+        "degree": 4,
+        "latitude": 13.0729626,
+        "longitude": 80.2702102
+    },
+    "J546": {
+        "osm_id": 248468275,
+        "degree": 4,
+        "latitude": 13.0725444,
+        "longitude": 80.2689746
+    },
+    "J547": {
+        "osm_id": 248468845,
+        "degree": 4,
+        "latitude": 13.0690899,
+        "longitude": 80.2686351
+    },
+    "J548": {
+        "osm_id": 258991748,
+        "degree": 4,
+        "latitude": 13.0644293,
+        "longitude": 80.2796203
+    },
+    "J549": {
+        "osm_id": 259057030,
+        "degree": 4,
+        "latitude": 13.0668429,
+        "longitude": 80.2736294
+    },
+    "J550": {
+        "osm_id": 259057534,
+        "degree": 4,
+        "latitude": 13.064469,
+        "longitude": 80.2782466
+    },
+    "J551": {
+        "osm_id": 259057603,
+        "degree": 4,
+        "latitude": 13.0575005,
+        "longitude": 80.281999
+    },
+    "J552": {
+        "osm_id": 259057610,
+        "degree": 4,
+        "latitude": 13.0641172,
+        "longitude": 80.283379
+    },
+    "J553": {
+        "osm_id": 259057676,
+        "degree": 4,
+        "latitude": 13.0618395,
+        "longitude": 80.2681231
+    },
+    "J554": {
+        "osm_id": 259057679,
+        "degree": 4,
+        "latitude": 13.0625368,
+        "longitude": 80.2681575
+    },
+    "J555": {
+        "osm_id": 259057682,
+        "degree": 4,
+        "latitude": 13.0641744,
+        "longitude": 80.2684115
+    },
+    "J556": {
+        "osm_id": 259057698,
+        "degree": 4,
+        "latitude": 13.0635853,
+        "longitude": 80.2683434
+    },
+    "J557": {
+        "osm_id": 259057851,
+        "degree": 4,
+        "latitude": 13.0612997,
+        "longitude": 80.2687031
+    },
+    "J558": {
+        "osm_id": 259057866,
+        "degree": 4,
+        "latitude": 13.0603905,
+        "longitude": 80.2685318
+    },
+    "J559": {
+        "osm_id": 259058414,
+        "degree": 4,
+        "latitude": 13.0522236,
+        "longitude": 80.2793335
+    },
+    "J560": {
+        "osm_id": 259058428,
+        "degree": 4,
+        "latitude": 13.0529093,
+        "longitude": 80.2776214
+    },
+    "J561": {
+        "osm_id": 259502754,
+        "degree": 4,
+        "latitude": 13.0521605,
+        "longitude": 80.2693755
+    },
+    "J562": {
+        "osm_id": 259773498,
+        "degree": 4,
+        "latitude": 13.0525184,
+        "longitude": 80.270405
+    },
+    "J563": {
+        "osm_id": 259773501,
+        "degree": 4,
+        "latitude": 13.0524678,
+        "longitude": 80.2709949
+    },
+    "J564": {
+        "osm_id": 259773502,
+        "degree": 4,
+        "latitude": 13.0521213,
+        "longitude": 80.2713573
+    },
+    "J565": {
+        "osm_id": 259773513,
+        "degree": 4,
+        "latitude": 13.0522434,
+        "longitude": 80.2730467
+    },
+    "J566": {
+        "osm_id": 259773514,
+        "degree": 4,
+        "latitude": 13.0522269,
+        "longitude": 80.2727249
+    },
+    "J567": {
+        "osm_id": 259773518,
+        "degree": 4,
+        "latitude": 13.0521562,
+        "longitude": 80.2723725
+    },
+    "J568": {
+        "osm_id": 259773552,
+        "degree": 4,
+        "latitude": 13.0525303,
+        "longitude": 80.2707488
+    },
+    "J569": {
+        "osm_id": 266204423,
+        "degree": 4,
+        "latitude": 13.0697226,
+        "longitude": 80.268159
+    },
+    "J570": {
+        "osm_id": 270432724,
+        "degree": 4,
+        "latitude": 13.0641519,
+        "longitude": 80.283516
+    },
+    "J571": {
+        "osm_id": 270432727,
+        "degree": 4,
+        "latitude": 13.0724865,
+        "longitude": 80.2854858
+    },
+    "J572": {
+        "osm_id": 309061989,
+        "degree": 4,
+        "latitude": 13.067803,
+        "longitude": 80.2710191
+    },
+    "J573": {
+        "osm_id": 309178281,
+        "degree": 4,
+        "latitude": 13.067875,
+        "longitude": 80.2708859
+    },
+    "J574": {
+        "osm_id": 317155229,
+        "degree": 4,
+        "latitude": 13.0728056,
+        "longitude": 80.2690173
+    },
+    "J575": {
+        "osm_id": 321842104,
+        "degree": 4,
+        "latitude": 13.0559864,
+        "longitude": 80.2816991
+    },
+    "J576": {
+        "osm_id": 604693414,
+        "degree": 4,
+        "latitude": 13.0522476,
+        "longitude": 80.2790205
+    },
+    "J577": {
+        "osm_id": 604693443,
+        "degree": 4,
+        "latitude": 13.0577922,
+        "longitude": 80.2799504
+    },
+    "J578": {
+        "osm_id": 604693453,
+        "degree": 4,
+        "latitude": 13.0577374,
+        "longitude": 80.2802391
+    },
+    "J579": {
+        "osm_id": 605230072,
+        "degree": 4,
+        "latitude": 13.0628459,
+        "longitude": 80.2682244
+    },
+    "J580": {
+        "osm_id": 605230074,
+        "degree": 4,
+        "latitude": 13.0632013,
+        "longitude": 80.2682837
+    },
+    "J581": {
+        "osm_id": 663690628,
+        "degree": 4,
+        "latitude": 13.0680083,
+        "longitude": 80.2805202
+    },
+    "J582": {
+        "osm_id": 2214509243,
+        "degree": 4,
+        "latitude": 13.0647211,
+        "longitude": 80.2783934
+    },
+    "J583": {
+        "osm_id": 2214509249,
+        "degree": 4,
+        "latitude": 13.0648674,
+        "longitude": 80.2783915
+    },
+    "J584": {
+        "osm_id": 2214509300,
+        "degree": 4,
+        "latitude": 13.0668762,
+        "longitude": 80.2737409
+    },
+    "J585": {
+        "osm_id": 2214509308,
+        "degree": 4,
+        "latitude": 13.0675838,
+        "longitude": 80.2726418
+    },
+    "J586": {
+        "osm_id": 2214509428,
+        "degree": 4,
+        "latitude": 13.0683616,
+        "longitude": 80.2717927
+    },
+    "J587": {
+        "osm_id": 2214509441,
+        "degree": 4,
+        "latitude": 13.0684298,
+        "longitude": 80.271881
+    },
+    "J588": {
+        "osm_id": 2241832826,
+        "degree": 4,
+        "latitude": 13.0725602,
+        "longitude": 80.2737981
+    },
+    "J589": {
+        "osm_id": 2241930007,
+        "degree": 4,
+        "latitude": 13.0690194,
+        "longitude": 80.2705187
+    },
+    "J590": {
+        "osm_id": 2241930050,
+        "degree": 4,
+        "latitude": 13.0697454,
+        "longitude": 80.2687265
+    },
+    "J591": {
+        "osm_id": 2489157872,
+        "degree": 4,
+        "latitude": 13.0715696,
+        "longitude": 80.2744964
+    },
+    "J592": {
+        "osm_id": 2489157876,
+        "degree": 4,
+        "latitude": 13.0716919,
+        "longitude": 80.274538
+    },
+    "J593": {
+        "osm_id": 5949482265,
+        "degree": 4,
+        "latitude": 13.064228,
+        "longitude": 80.2834126
+    },
+    "J594": {
+        "osm_id": 6816905970,
+        "degree": 4,
+        "latitude": 13.0643684,
+        "longitude": 80.2806292
+    },
+    "J595": {
+        "osm_id": 9105332863,
+        "degree": 4,
+        "latitude": 13.0520233,
+        "longitude": 80.2803081
+    },
+    "J596": {
+        "osm_id": 9105332864,
+        "degree": 4,
+        "latitude": 13.052094,
+        "longitude": 80.2798625
+    },
+    "J597": {
+        "osm_id": 9181594208,
+        "degree": 4,
+        "latitude": 13.0523073,
+        "longitude": 80.2785878
+    },
+    "J598": {
+        "osm_id": 9187378749,
+        "degree": 4,
+        "latitude": 13.0678201,
+        "longitude": 80.2816758
+    },
+    "J599": {
+        "osm_id": 9764660713,
+        "degree": 4,
+        "latitude": 13.0522259,
+        "longitude": 80.2681228
+    },
+    "J600": {
+        "osm_id": 9904659742,
+        "degree": 4,
+        "latitude": 13.0575611,
+        "longitude": 80.282012
+    },
+    "J601": {
+        "osm_id": 9904659744,
+        "degree": 4,
+        "latitude": 13.0642773,
+        "longitude": 80.2782735
+    },
+    "J602": {
+        "osm_id": 9983146247,
+        "degree": 4,
+        "latitude": 13.0696351,
+        "longitude": 80.2849837
+    },
+    "J603": {
+        "osm_id": 11059270206,
+        "degree": 4,
+        "latitude": 13.064254,
+        "longitude": 80.2810028
+    },
+    "J604": {
+        "osm_id": 11059270230,
+        "degree": 4,
+        "latitude": 13.0577447,
+        "longitude": 80.2806024
+    },
+    "J605": {
+        "osm_id": 11428603270,
+        "degree": 4,
+        "latitude": 13.0529437,
+        "longitude": 80.2772741
+    },
+    "J606": {
+        "osm_id": 11937052853,
+        "degree": 4,
+        "latitude": 13.0691935,
+        "longitude": 80.2783872
+    },
+    "J607": {
+        "osm_id": 11937052854,
+        "degree": 4,
+        "latitude": 13.0692713,
+        "longitude": 80.2784577
+    },
+    "J608": {
+        "osm_id": 12035347198,
+        "degree": 4,
+        "latitude": 13.052113,
+        "longitude": 80.2756688
+    },
+    "J609": {
+        "osm_id": 12272904105,
+        "degree": 4,
+        "latitude": 13.0681476,
+        "longitude": 80.2709934
+    },
+    "J610": {
+        "osm_id": 12486173648,
+        "degree": 4,
+        "latitude": 13.068568,
+        "longitude": 80.2685499
+    },
+    "J611": {
+        "osm_id": 12486173649,
+        "degree": 4,
+        "latitude": 13.0685063,
+        "longitude": 80.2685213
+    },
+    "J612": {
+        "osm_id": 12679975162,
+        "degree": 4,
+        "latitude": 13.0659493,
+        "longitude": 80.2757869
+    },
+    "J613": {
+        "osm_id": 30037899,
+        "degree": 3,
+        "latitude": 13.0681313,
+        "longitude": 80.2712749
+    },
+    "J614": {
+        "osm_id": 247690829,
+        "degree": 3,
+        "latitude": 13.068432,
+        "longitude": 80.2717094
+    },
+    "J615": {
+        "osm_id": 247692736,
+        "degree": 3,
+        "latitude": 13.0715455,
+        "longitude": 80.2749612
+    },
+    "J616": {
+        "osm_id": 248467503,
+        "degree": 3,
+        "latitude": 13.0681894,
+        "longitude": 80.2703532
+    },
+    "J617": {
+        "osm_id": 270432726,
+        "degree": 3,
+        "latitude": 13.0678099,
+        "longitude": 80.2843359
+    },
+    "J618": {
+        "osm_id": 309061751,
+        "degree": 3,
+        "latitude": 13.0720436,
+        "longitude": 80.274623
+    },
+    "J619": {
+        "osm_id": 310728374,
+        "degree": 3,
+        "latitude": 13.057554,
+        "longitude": 80.282056
+    },
+    "J620": {
+        "osm_id": 310728484,
+        "degree": 3,
+        "latitude": 13.0529457,
+        "longitude": 80.2812585
+    },
+    "J621": {
+        "osm_id": 663690621,
+        "degree": 3,
+        "latitude": 13.0717678,
+        "longitude": 80.2747146
+    },
+    "J622": {
+        "osm_id": 1279571365,
+        "degree": 3,
+        "latitude": 13.0522686,
+        "longitude": 80.2810235
+    },
+    "J623": {
+        "osm_id": 2482072909,
+        "degree": 3,
+        "latitude": 13.0682067,
+        "longitude": 80.2716063
+    },
+    "J624": {
+        "osm_id": 2482072912,
+        "degree": 3,
+        "latitude": 13.0682205,
+        "longitude": 80.2721044
+    },
+    "J625": {
+        "osm_id": 2482072915,
+        "degree": 3,
+        "latitude": 13.0685129,
+        "longitude": 80.2717904
+    },
+    "J626": {
+        "osm_id": 2482072920,
+        "degree": 3,
+        "latitude": 13.068774,
+        "longitude": 80.272091
+    },
+    "J627": {
+        "osm_id": 9904715152,
+        "degree": 3,
+        "latitude": 13.0680516,
+        "longitude": 80.2842231
+    },
+    "J628": {
+        "osm_id": 9983146252,
+        "degree": 3,
+        "latitude": 13.0695946,
+        "longitude": 80.2847374
+    },
+    "J629": {
+        "osm_id": 9983146260,
+        "degree": 3,
+        "latitude": 13.0698641,
+        "longitude": 80.2847923
+    },
+    "J630": {
+        "osm_id": 11936481870,
+        "degree": 3,
+        "latitude": 13.071935,
+        "longitude": 80.2746906
+    },
+    "J631": {
+        "osm_id": 11939287864,
+        "degree": 3,
+        "latitude": 13.0682902,
+        "longitude": 80.2694551
+    },
+    "J632": {
+        "osm_id": 12035794039,
+        "degree": 3,
+        "latitude": 13.0706117,
+        "longitude": 80.2739918
+    },
+    "J633": {
+        "osm_id": 12272904106,
+        "degree": 3,
+        "latitude": 13.0681523,
+        "longitude": 80.270889
+    },
+    "J634": {
+        "osm_id": 12465410979,
+        "degree": 3,
+        "latitude": 13.0574927,
+        "longitude": 80.2820454
+    },
+    "J635": {
+        "osm_id": 12478119243,
+        "degree": 3,
+        "latitude": 13.0665404,
+        "longitude": 80.2693175
+    },
+    "J636": {
+        "osm_id": 12478119245,
+        "degree": 3,
+        "latitude": 13.0678513,
+        "longitude": 80.2710759
+    },
+    "J637": {
+        "osm_id": 12486173646,
+        "degree": 3,
+        "latitude": 13.068604,
+        "longitude": 80.2684666
+    },
+    "J638": {
+        "osm_id": 12486173647,
+        "degree": 3,
+        "latitude": 13.0685373,
+        "longitude": 80.2684503
+    },
+    "J639": {
+        "osm_id": 12841989270,
+        "degree": 3,
+        "latitude": 13.0665975,
+        "longitude": 80.269497
+    },
+    "J640": {
+        "osm_id": 12841989271,
+        "degree": 3,
+        "latitude": 13.0664299,
+        "longitude": 80.2694713
+    },
+    "J641": {
+        "osm_id": 248467915,
+        "degree": 2,
+        "latitude": 13.0698885,
+        "longitude": 80.2713796
+    },
+    "J642": {
+        "osm_id": 248467926,
+        "degree": 2,
+        "latitude": 13.0701446,
+        "longitude": 80.2703748
+    },
+    "J643": {
+        "osm_id": 248467937,
+        "degree": 2,
+        "latitude": 13.0711212,
+        "longitude": 80.2718338
+    },
+    "J644": {
+        "osm_id": 248467940,
+        "degree": 2,
+        "latitude": 13.0726529,
+        "longitude": 80.272458
+    },
+    "J645": {
+        "osm_id": 248468058,
+        "degree": 2,
+        "latitude": 13.0733699,
+        "longitude": 80.2685818
+    },
+    "J646": {
+        "osm_id": 248468644,
+        "degree": 2,
+        "latitude": 13.0701775,
+        "longitude": 80.2702215
+    },
+    "J647": {
+        "osm_id": 248468712,
+        "degree": 2,
+        "latitude": 13.0708608,
+        "longitude": 80.2717555
+    },
+    "J648": {
+        "osm_id": 259057136,
+        "degree": 2,
+        "latitude": 13.0655705,
+        "longitude": 80.2707708
+    },
+    "J649": {
+        "osm_id": 259057150,
+        "degree": 2,
+        "latitude": 13.0653635,
+        "longitude": 80.2706752
+    },
+    "J650": {
+        "osm_id": 259057248,
+        "degree": 2,
+        "latitude": 13.065072,
+        "longitude": 80.2704875
+    },
+    "J651": {
+        "osm_id": 259057392,
+        "degree": 2,
+        "latitude": 13.0640219,
+        "longitude": 80.2756118
+    },
+    "J652": {
+        "osm_id": 259057410,
+        "degree": 2,
+        "latitude": 13.065644,
+        "longitude": 80.274857
+    },
+    "J653": {
+        "osm_id": 259057420,
+        "degree": 2,
+        "latitude": 13.0647764,
+        "longitude": 80.2747779
+    },
+    "J654": {
+        "osm_id": 259057482,
+        "degree": 2,
+        "latitude": 13.063676,
+        "longitude": 80.2754185
+    },
+    "J655": {
+        "osm_id": 259057572,
+        "degree": 2,
+        "latitude": 13.065247,
+        "longitude": 80.2764727
+    },
+    "J656": {
+        "osm_id": 259057574,
+        "degree": 2,
+        "latitude": 13.0652278,
+        "longitude": 80.2753982
+    },
+    "J657": {
+        "osm_id": 259057870,
+        "degree": 2,
+        "latitude": 13.0621097,
+        "longitude": 80.2685486
+    },
+    "J658": {
+        "osm_id": 259057916,
+        "degree": 2,
+        "latitude": 13.0567996,
+        "longitude": 80.2719019
+    },
+    "J659": {
+        "osm_id": 259058016,
+        "degree": 2,
+        "latitude": 13.0578789,
+        "longitude": 80.2752596
+    },
+    "J660": {
+        "osm_id": 259058393,
+        "degree": 2,
+        "latitude": 13.054852,
+        "longitude": 80.2771235
+    },
+    "J661": {
+        "osm_id": 259058410,
+        "degree": 2,
+        "latitude": 13.053641,
+        "longitude": 80.2790553
+    },
+    "J662": {
+        "osm_id": 259058432,
+        "degree": 2,
+        "latitude": 13.0530572,
+        "longitude": 80.2764861
+    },
+    "J663": {
+        "osm_id": 259502739,
+        "degree": 2,
+        "latitude": 13.0554416,
+        "longitude": 80.2690896
+    },
+    "J664": {
+        "osm_id": 259509861,
+        "degree": 2,
+        "latitude": 13.0534994,
+        "longitude": 80.268276
+    },
+    "J665": {
+        "osm_id": 259773511,
+        "degree": 2,
+        "latitude": 13.0522345,
+        "longitude": 80.2733352
+    },
+    "J666": {
+        "osm_id": 259773561,
+        "degree": 2,
+        "latitude": 13.052233,
+        "longitude": 80.2739484
+    },
+    "J667": {
+        "osm_id": 262675989,
+        "degree": 2,
+        "latitude": 13.0532092,
+        "longitude": 80.2753398
+    },
+    "J668": {
+        "osm_id": 262675994,
+        "degree": 2,
+        "latitude": 13.0533274,
+        "longitude": 80.274054
+    },
+    "J669": {
+        "osm_id": 266204417,
+        "degree": 2,
+        "latitude": 13.0701896,
+        "longitude": 80.2681498
+    },
+    "J670": {
+        "osm_id": 367869383,
+        "degree": 2,
+        "latitude": 13.0705608,
+        "longitude": 80.2708648
+    },
+    "J671": {
+        "osm_id": 604693375,
+        "degree": 2,
+        "latitude": 13.0550103,
+        "longitude": 80.2718009
+    },
+    "J672": {
+        "osm_id": 604693380,
+        "degree": 2,
+        "latitude": 13.0566183,
+        "longitude": 80.2735321
+    },
+    "J673": {
+        "osm_id": 604693381,
+        "degree": 2,
+        "latitude": 13.0542803,
+        "longitude": 80.2750031
+    },
+    "J674": {
+        "osm_id": 604693382,
+        "degree": 2,
+        "latitude": 13.0549559,
+        "longitude": 80.274871
+    },
+    "J675": {
+        "osm_id": 604693400,
+        "degree": 2,
+        "latitude": 13.0588467,
+        "longitude": 80.2714671
+    },
+    "J676": {
+        "osm_id": 604693438,
+        "degree": 2,
+        "latitude": 13.0556677,
+        "longitude": 80.2796561
+    },
+    "J677": {
+        "osm_id": 604693450,
+        "degree": 2,
+        "latitude": 13.0568472,
+        "longitude": 80.2795059
+    },
+    "J678": {
+        "osm_id": 604707665,
+        "degree": 2,
+        "latitude": 13.0605704,
+        "longitude": 80.2745595
+    },
+    "J679": {
+        "osm_id": 604707666,
+        "degree": 2,
+        "latitude": 13.0606468,
+        "longitude": 80.2748972
+    },
+    "J680": {
+        "osm_id": 604707668,
+        "degree": 2,
+        "latitude": 13.0603346,
+        "longitude": 80.2750481
+    },
+    "J681": {
+        "osm_id": 604707682,
+        "degree": 2,
+        "latitude": 13.0620047,
+        "longitude": 80.2767042
+    },
+    "J682": {
+        "osm_id": 604707722,
+        "degree": 2,
+        "latitude": 13.0642528,
+        "longitude": 80.2751335
+    },
+    "J683": {
+        "osm_id": 604707728,
+        "degree": 2,
+        "latitude": 13.0647208,
+        "longitude": 80.2751883
+    },
+    "J684": {
+        "osm_id": 605230008,
+        "degree": 2,
+        "latitude": 13.0595152,
+        "longitude": 80.2734897
+    },
+    "J685": {
+        "osm_id": 605230031,
+        "degree": 2,
+        "latitude": 13.0604944,
+        "longitude": 80.2733617
+    },
+    "J686": {
+        "osm_id": 605230061,
+        "degree": 2,
+        "latitude": 13.0615465,
+        "longitude": 80.2740013
+    },
+    "J687": {
+        "osm_id": 605230079,
+        "degree": 2,
+        "latitude": 13.0636575,
+        "longitude": 80.2685351
+    },
+    "J688": {
+        "osm_id": 605230128,
+        "degree": 2,
+        "latitude": 13.0650701,
+        "longitude": 80.2732369
+    },
+    "J689": {
+        "osm_id": 1272397844,
+        "degree": 2,
+        "latitude": 13.0569834,
+        "longitude": 80.2794924
+    },
+    "J690": {
+        "osm_id": 2217244518,
+        "degree": 2,
+        "latitude": 13.054956,
+        "longitude": 80.2751493
+    },
+    "J691": {
+        "osm_id": 2217244539,
+        "degree": 2,
+        "latitude": 13.0558319,
+        "longitude": 80.2794758
+    },
+    "J692": {
+        "osm_id": 2217293913,
+        "degree": 2,
+        "latitude": 13.0540727,
+        "longitude": 80.2701121
+    },
+    "J693": {
+        "osm_id": 2217293924,
+        "degree": 2,
+        "latitude": 13.0542603,
+        "longitude": 80.2700765
+    },
+    "J694": {
+        "osm_id": 2217293948,
+        "degree": 2,
+        "latitude": 13.0549745,
+        "longitude": 80.2710003
+    },
+    "J695": {
+        "osm_id": 2218064807,
+        "degree": 2,
+        "latitude": 13.0604931,
+        "longitude": 80.2750676
+    },
+    "J696": {
+        "osm_id": 2218064837,
+        "degree": 2,
+        "latitude": 13.0614134,
+        "longitude": 80.2739578
+    },
+    "J697": {
+        "osm_id": 2218064846,
+        "degree": 2,
+        "latitude": 13.0617345,
+        "longitude": 80.272797
+    },
+    "J698": {
+        "osm_id": 2218064958,
+        "degree": 2,
+        "latitude": 13.064558,
+        "longitude": 80.2773476
+    },
+    "J699": {
+        "osm_id": 2218065104,
+        "degree": 2,
+        "latitude": 13.0648267,
+        "longitude": 80.2749895
+    },
+    "J700": {
+        "osm_id": 2218065116,
+        "degree": 2,
+        "latitude": 13.0648824,
+        "longitude": 80.275768
+    },
+    "J701": {
+        "osm_id": 2218065131,
+        "degree": 2,
+        "latitude": 13.0650826,
+        "longitude": 80.27259
+    },
+    "J702": {
+        "osm_id": 2218065133,
+        "degree": 2,
+        "latitude": 13.0650288,
+        "longitude": 80.2730369
+    },
+    "J703": {
+        "osm_id": 2218065153,
+        "degree": 2,
+        "latitude": 13.0652469,
+        "longitude": 80.2728482
+    },
+    "J704": {
+        "osm_id": 2218065181,
+        "degree": 2,
+        "latitude": 13.0656746,
+        "longitude": 80.2732522
+    },
+    "J705": {
+        "osm_id": 2218065183,
+        "degree": 2,
+        "latitude": 13.0658964,
+        "longitude": 80.2728489
+    },
+    "J706": {
+        "osm_id": 2218065185,
+        "degree": 2,
+        "latitude": 13.0659035,
+        "longitude": 80.2731135
+    },
+    "J707": {
+        "osm_id": 2218065187,
+        "degree": 2,
+        "latitude": 13.0659227,
+        "longitude": 80.2726012
+    },
+    "J708": {
+        "osm_id": 2241832812,
+        "degree": 2,
+        "latitude": 13.0718153,
+        "longitude": 80.2721066
+    },
+    "J709": {
+        "osm_id": 2241832853,
+        "degree": 2,
+        "latitude": 13.0731183,
+        "longitude": 80.2712603
+    },
+    "J710": {
+        "osm_id": 2241930013,
+        "degree": 2,
+        "latitude": 13.0690448,
+        "longitude": 80.2702516
+    },
+    "J711": {
+        "osm_id": 2241930197,
+        "degree": 2,
+        "latitude": 13.0714314,
+        "longitude": 80.2716414
+    },
+    "J712": {
+        "osm_id": 6539506068,
+        "degree": 2,
+        "latitude": 13.06726,
+        "longitude": 80.2764814
+    },
+    "J713": {
+        "osm_id": 8634681875,
+        "degree": 2,
+        "latitude": 13.072098,
+        "longitude": 80.2901754
+    },
+    "J714": {
+        "osm_id": 9187213105,
+        "degree": 2,
+        "latitude": 13.0562929,
+        "longitude": 80.2712689
+    },
+    "J715": {
+        "osm_id": 9904823223,
+        "degree": 2,
+        "latitude": 13.0555507,
+        "longitude": 80.2796128
+    },
+    "J716": {
+        "osm_id": 9983155430,
+        "degree": 2,
+        "latitude": 13.0696271,
+        "longitude": 80.288442
+    },
+    "J717": {
+        "osm_id": 9983155455,
+        "degree": 2,
+        "latitude": 13.0722342,
+        "longitude": 80.2858036
+    },
+    "J718": {
+        "osm_id": 10536336559,
+        "degree": 2,
+        "latitude": 13.0731215,
+        "longitude": 80.2858464
+    },
+    "J719": {
+        "osm_id": 10536336569,
+        "degree": 2,
+        "latitude": 13.0732987,
+        "longitude": 80.2852697
+    },
+    "J720": {
+        "osm_id": 10968481991,
+        "degree": 2,
+        "latitude": 13.0664255,
+        "longitude": 80.268369
+    },
+    "J721": {
+        "osm_id": 10968481995,
+        "degree": 2,
+        "latitude": 13.0668783,
+        "longitude": 80.2684683
+    },
+    "J722": {
+        "osm_id": 11042108773,
+        "degree": 2,
+        "latitude": 13.0531931,
+        "longitude": 80.2688922
+    },
+    "J723": {
+        "osm_id": 11056437676,
+        "degree": 2,
+        "latitude": 13.060485,
+        "longitude": 80.2746919
+    },
+    "J724": {
+        "osm_id": 11061397343,
+        "degree": 2,
+        "latitude": 13.0547399,
+        "longitude": 80.2794197
+    },
+    "J725": {
+        "osm_id": 11061397345,
+        "degree": 2,
+        "latitude": 13.054702,
+        "longitude": 80.2796872
+    },
+    "J726": {
+        "osm_id": 11613260530,
+        "degree": 2,
+        "latitude": 13.0700108,
+        "longitude": 80.269802
+    },
+    "J727": {
+        "osm_id": 11613260534,
+        "degree": 2,
+        "latitude": 13.0695722,
+        "longitude": 80.2698543
+    },
+    "J728": {
+        "osm_id": 11622119218,
+        "degree": 2,
+        "latitude": 13.0567567,
+        "longitude": 80.276564
+    },
+    "J729": {
+        "osm_id": 11622127871,
+        "degree": 2,
+        "latitude": 13.0568708,
+        "longitude": 80.2767009
+    },
+    "J730": {
+        "osm_id": 11622144193,
+        "degree": 2,
+        "latitude": 13.0575445,
+        "longitude": 80.2749883
+    },
+    "J731": {
+        "osm_id": 11622307845,
+        "degree": 2,
+        "latitude": 13.0532724,
+        "longitude": 80.2781676
+    },
+    "J732": {
+        "osm_id": 11622330008,
+        "degree": 2,
+        "latitude": 13.0542468,
+        "longitude": 80.2765669
+    },
+    "J733": {
+        "osm_id": 11722112187,
+        "degree": 2,
+        "latitude": 13.0523551,
+        "longitude": 80.2777876
+    },
+    "J734": {
+        "osm_id": 11786144567,
+        "degree": 2,
+        "latitude": 13.0603302,
+        "longitude": 80.270934
+    },
+    "J735": {
+        "osm_id": 11786170299,
+        "degree": 2,
+        "latitude": 13.0591954,
+        "longitude": 80.2737327
+    },
+    "J736": {
+        "osm_id": 12027826403,
+        "degree": 2,
+        "latitude": 13.0717578,
+        "longitude": 80.2718985
+    },
+    "J737": {
+        "osm_id": 12035347199,
+        "degree": 2,
+        "latitude": 13.052682,
+        "longitude": 80.2758496
+    },
+    "J738": {
+        "osm_id": 12213569425,
+        "degree": 2,
+        "latitude": 13.0580783,
+        "longitude": 80.2798569
+    },
+    "J739": {
+        "osm_id": 12213569426,
+        "degree": 2,
+        "latitude": 13.0589645,
+        "longitude": 80.2796645
+    },
+    "J740": {
+        "osm_id": 12213569428,
+        "degree": 2,
+        "latitude": 13.0612864,
+        "longitude": 80.2787118
+    },
+    "J741": {
+        "osm_id": 12213569437,
+        "degree": 2,
+        "latitude": 13.0604072,
+        "longitude": 80.2793263
+    },
+    "J742": {
+        "osm_id": 12213569440,
+        "degree": 2,
+        "latitude": 13.0607229,
+        "longitude": 80.2796139
+    },
+    "J743": {
+        "osm_id": 12213569448,
+        "degree": 2,
+        "latitude": 13.0731911,
+        "longitude": 80.2862984
+    },
+    "J744": {
+        "osm_id": 12486173645,
+        "degree": 2,
+        "latitude": 13.0684686,
+        "longitude": 80.2684601
+    },
+    "J745": {
+        "osm_id": 12679975163,
+        "degree": 2,
+        "latitude": 13.0657497,
+        "longitude": 80.2757319
+    },
+    "J746": {
+        "osm_id": 12841989269,
+        "degree": 2,
+        "latitude": 13.0664142,
+        "longitude": 80.2694217
+    },
+    "J747": {
+        "osm_id": 13982374748,
+        "degree": 2,
+        "latitude": 13.0626348,
+        "longitude": 80.2748576
+    },
+    "J748": {
+        "osm_id": 248467921,
+        "degree": 1,
+        "latitude": 13.0700594,
+        "longitude": 80.2707518
+    },
+    "J749": {
+        "osm_id": 309061637,
+        "degree": 1,
+        "latitude": 13.0735535,
+        "longitude": 80.2765139
+    },
+    "J750": {
+        "osm_id": 309061742,
+        "degree": 1,
+        "latitude": 13.072874,
+        "longitude": 80.2755199
+    }
+}
